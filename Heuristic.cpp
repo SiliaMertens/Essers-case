@@ -30,7 +30,10 @@ string coordinates_file = "distance_matrix 2 jan.txt";
 void read_data(problem& p) {
 
 	ifstream infile;
+    cout << "Reading data_file '" << data_file << "'\n";
 	infile.open(data_file);
+    if (!infile.is_open())
+        cerr << "Error, failed to open data_file '" << data_file << "'\n";
 
 	string line, collection_date, unit_description, delivery_date;
 	long long int order_nr;

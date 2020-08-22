@@ -18,7 +18,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 #-DDEBUG stands for -D<macroname>=<value> which defines a macro
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   # using Clang
-  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -O3 -Wall -Wpedantic -Wextra -DDEBUG")
+  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -O0 -Wall -Wpedantic -Wextra -DDEBUG")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   # using GCC
   set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -O3 -Wall -Wpedantic -Wextra -DDEBUG")
