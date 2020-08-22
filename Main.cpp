@@ -6,6 +6,7 @@
 #include <time.h>
 #include <ctime> 
 #include <chrono>
+#include <algorithm>    // std::find
 
 #include "ProbabilityEstimator.h"
 #include "Heuristic.h"
