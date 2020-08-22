@@ -118,6 +118,9 @@ std::vector<std::vector<double>> ProbabilityEstimator::getEmpricialDistributions
         }
         else
         {
+            std::cerr << "getEmpricialDistributions known client-ids:\n";
+            for (auto imap: currCollDateMap)
+                std::cerr << " - "<<imap.first<<"\n";
             throw std::runtime_error("ProbabilityEstimator::getEmpricialDistributions() -> Could not find a probability distribution for client-id: " + id);
         }
     }
@@ -161,6 +164,8 @@ void ProbabilityEstimator::readDistributions(const std::string& collection_date)
             //Clear the vector to store new values
             cDist.clear();
         }
+    } else {
+        throw std::runtime_error("Failed to read file '" + collection_date + ".csv" + "'\n");
     }
     fin.close();
 }
