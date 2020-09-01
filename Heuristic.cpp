@@ -701,7 +701,7 @@ void swap(struct problem& p, struct solution& s1, struct solution& s2, struct so
 						if (s2.routes[insert_vehicle_id].earliest_time[insert_position - 1] + p.nodes[s2.routes[insert_vehicle_id].route[insert_position - 1]].service_dur +
 							p.time_matrix[predecessor_id * p.n_nodes + customer_id] <= p.nodes[customer_id].upper_tw &&
 							s2.routes[insert_vehicle_id].latest_time[insert_position] - p.nodes[customer_id].service_dur -
-							p.time_matrix[customer_id * p.n_nodes + successor_id] >= p.nodes[s_try.routes[vehicle_id].route[position + 1]].lower_tw) {
+							p.time_matrix[customer_id * p.n_nodes + successor_id] >= p.nodes[s2.routes[vehicle_id].route[position + 1]].lower_tw) {
 							if (check_schedule(p, s2, insert_vehicle_id) == true) {
 								if (check_load(p, s2, insert_vehicle_id) == true) {
 
