@@ -589,6 +589,8 @@ void change(problem& p, struct solution& s, int vehicle1, int vehicle2) {
 	change_update_solution_2(p, s, vehicle2, vehicle1);
 
 	change_update_solution_3(p, s, s_try, vehicle1, vehicle2);
+	
+	delete[] s_try.routes;
 }
 
 int last_route(problem& p, solution& s) {
@@ -641,6 +643,8 @@ void relocate(struct problem& p, struct solution& s_prev, struct solution& s_cur
 			}
 		}
 	}
+	
+	delete[] s_recourse.routes;
 }
 
 void swap(struct problem& p, struct solution& s1, struct solution& s2, struct solution& s3) {
@@ -701,7 +705,7 @@ void swap(struct problem& p, struct solution& s1, struct solution& s2, struct so
 						if (s2.routes[insert_vehicle_id].earliest_time[insert_position - 1] + p.nodes[s2.routes[insert_vehicle_id].route[insert_position - 1]].service_dur +
 							p.time_matrix[predecessor_id * p.n_nodes + customer_id] <= p.nodes[customer_id].upper_tw &&
 							s2.routes[insert_vehicle_id].latest_time[insert_position] - p.nodes[customer_id].service_dur -
-							p.time_matrix[customer_id * p.n_nodes + successor_id] >= p.nodes[s2.routes[vehicle_id].route[position + 1]].lower_tw) {
+							p.time_matrix[customer_id * p.n_nodes + successor_id] >= p.nodes[customer_id].lower_tw) {
 							if (check_schedule(p, s2, insert_vehicle_id) == true) {
 								if (check_load(p, s2, insert_vehicle_id) == true) {
 
@@ -756,7 +760,7 @@ void swap(struct problem& p, struct solution& s1, struct solution& s2, struct so
 			}
 		}
 	}
-
+	delete[] s_recourse.routes;
 }
 
 void remove_customer(struct problem& p, struct solution& s, int vehicle_id, int position) {
@@ -904,7 +908,8 @@ void perform_best_insertion_for_swap(struct problem& p, struct solution& s, int 
 	}
 
 	//cout << "best customer " << customer_id << " vehicle " << best_vehicle_id << " position " << best_position << " cost " << best_cost << "\n";
-
+	delete[] s_try.routes;
+	delete[] s_recourse.routes;
 }
 
 void perform_best_insertion(struct problem& p, struct solution& s, int customer_id) {
@@ -1007,6 +1012,8 @@ void perform_best_insertion(struct problem& p, struct solution& s, int customer_
 	//}
 
 	//cout << "\n";
+	
+	delete[] s_try.routes;
 
 }
 
