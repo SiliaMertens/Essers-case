@@ -280,8 +280,6 @@ void change_update_solution_3(problem& p, solution& s1, solution& s2, int vehicl
 
 vector<int> position_removed_customers(problem& p, solution& s, int customer_id) { // This function is made to determine the route and the position of the customers that will be removed in the perturbation (random % of customers that will be removed)
 
-	//cout << "customer " << customer_id << "\n";
-
 	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
 		for (size_t position = 1; position < s.routes[vehicle_id].route.size(); position++) {
 			if (customer_id == s.routes[vehicle_id].route[position]) {
@@ -295,14 +293,6 @@ vector<int> position_removed_customers(problem& p, solution& s, int customer_id)
 			}
 		}
 	}
-
-	//for (int i = 0; i < s.route_customer.size(); i++) {
-	//	cout << "route " << s.route_customer[i] << " ";
-	//}
-
-	//for (int i = 0; i < s.position_customer.size(); i++) {
-	//	cout << "position " << s.position_customer[i] << "\n";
-	//}
 
 	return s.route_customer;
 	return s.position_customer;
@@ -450,9 +440,6 @@ vector<double> calculate_probabilities(problem& p, solution& s, int vehicle_id)
 		// probability of failure at customer 3 = 0.10 * 0.95 (no failure at customer 1 and 2)
 	}
 
-	//for (size_t i = 0; i < s.routes[vehicle_id].probability.size(); i++) {
-	//	cout << "prob " << s.routes[vehicle_id].probability[i] << "\n";
-	//}
 
 	return s.routes[vehicle_id].probability;
 
@@ -476,6 +463,9 @@ void bereken_gewogen_route_cost(problem& p, solution& s1, solution s2, int vehic
 	s1.routes[vehicle_id].weighted_route_cost = 0.0;
 	s1.routes[vehicle_id].weighted_distance_cost = 0.0;
 	s1.routes[vehicle_id].weighted_route_duration = 0.0;
+	s1.routes[vehicle_id].weighted_time_window_violation = 0.0;
+	s1.routes[vehicle_id].weighted_overtime = 0.0;
+	s1.routes[vehicle_id].weighted_driving_time = 0.0;
 	s1.routes[vehicle_id].route_used = 0;
 	violation_risk = calculate_probabilities(p, s1, vehicle_id);
 
@@ -493,6 +483,9 @@ void bereken_gewogen_route_cost(problem& p, solution& s1, solution s2, int vehic
 		s1.routes[vehicle_id].weighted_route_cost += s2.routes[vehicle_id].route_cost * violation_risk[index + 1];
 		s1.routes[vehicle_id].weighted_distance_cost += s2.routes[vehicle_id].distance_cost * violation_risk[index + 1];
 		s1.routes[vehicle_id].weighted_route_duration += s2.routes[vehicle_id].route_duration * violation_risk[index + 1];
+		s1.routes[vehicle_id].weighted_time_window_violation += s2.routes[vehicle_id].time_window_violiation * violation_risk[index + 1];
+		s1.routes[vehicle_id].weighted_overtime += s2.routes[vehicle_id].overtime * violation_risk[index + 1];
+		s1.routes[vehicle_id].weighted_driving_time += s2.routes[vehicle_id].driving_time * violation_risk[index + 1];
 	}
 }
 
@@ -509,6 +502,10 @@ void calculate_total_cost(problem& p, solution& s) { // In the previous function
 		s.total_cost += s.routes[vehicle_id].weighted_route_cost;
 		s.number_of_vehicles_used += s.routes[vehicle_id].route_used;
 		s.total_route_duration += s.routes[vehicle_id].weighted_route_duration;
+		s.total_time_window_violation += s.routes[vehicle_id].weighted_time_window_violation;
+		s.total_overtime += s.routes[vehicle_id].weighted_overtime;
+		s.total_driving_time += s.routes[vehicle_id].weighted_driving_time;
+
 
 	}
 
