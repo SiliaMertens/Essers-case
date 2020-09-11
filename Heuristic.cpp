@@ -375,7 +375,7 @@ void bereken_route_cost(problem& p, solution& s, int vehicle_id) { // similar to
 	}
 
 	if (s.routes[vehicle_id].distance_cost > p.max_operating_time) {
-		s.routes[vehicle_id].driving_time = s.routes[vehicle_id].distance_cost - p.max_operating_time;
+		s.routes[vehicle_id].driving_time = (s.routes[vehicle_id].distance_cost - p.max_operating_time) * allowable_operating_time_cost;
 		s.routes[vehicle_id].route_cost += s.routes[vehicle_id].driving_time; 
 	}
 
@@ -400,7 +400,7 @@ void bereken_route_cost(problem& p, solution& s, int vehicle_id) { // similar to
 
 	for (size_t position = 1; position < s.routes[vehicle_id].route.size(); position++) {
 		if (s.routes[vehicle_id].earliest_time[position] > p.nodes[s.routes[vehicle_id].route[position]].upper_tw) {
-			s.routes[vehicle_id].time_window_violiation += (s.routes[vehicle_id].earliest_time[position] - p.nodes[s.routes[vehicle_id].route[position]].upper_tw);
+			s.routes[vehicle_id].time_window_violiation += (s.routes[vehicle_id].earliest_time[position] - p.nodes[s.routes[vehicle_id].route[position]].upper_tw) * time_window_violation_cost;
 
 			s.routes[vehicle_id].route_cost += s.routes[vehicle_id].time_window_violiation;
 		}
