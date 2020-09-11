@@ -10,6 +10,8 @@ const double fixed_vehicle_cost = 102.24;
 const double km_cost = 0.5834;
 const int driver_cost = 25;
 const double overtime_cost = 2.78;
+const double time_window_violation_cost = 1;
+const double allowable_operating_time_cost = 1;
 
 class ProbabilityEstimator; // forward declaration
 
@@ -81,6 +83,9 @@ struct solution {
 	int number_of_vehicles_used;
 	double total_route_duration;
 	double total_cost;
+	double total_time_window_violation;
+	double total_overtime;
+	double total_driving_time;
 	std::vector<int> route_customer;
 	std::vector<int> position_customer;
 	bool possible_insertion;
