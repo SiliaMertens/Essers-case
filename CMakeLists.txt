@@ -16,19 +16,21 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 #To enable compiler optimisation either for GCC or MSVS
 #-DDEBUG stands for -D<macroname>=<value> which defines a macro
+# -g: inlcude debug information when compiling. -O3 maximum optimisation level. -Wall -Wpedantic -Wextra: print/enable warnings. 
+# -DDEBUG (is a composition of -D DEBUG): to define a macro named DEBUG (to be used later with `ifdef DEBUG` do something)
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  # using Clang
-  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -O0 -Wall -Wpedantic -Wextra -DDEBUG")
+  # using Clang 
+  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g -O3 -Wall -Wpedantic -Wextra -DDEBUG")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   # using GCC
-  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -O3 -Wall -Wpedantic -Wextra -DDEBUG")
+  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g -O3 -Wall -Wpedantic -Wextra -DDEBUG")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   # using Visual Studio C++
-  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} /O2 /Wall /DDEBUG")
+  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} /O2 /Wall /Zi /DEBUG /DDEBUG")
 endif()
 
 # add the executable
-add_executable(Heuristic Main.cpp Heuristic.cpp ProbabilityEstimator.cpp)
+add_executable(Heuristic main.cpp Heuristic.cpp ProbabilityEstimator.cpp)
 
 # In case installing as executable is needed
 #Uncomment the following line, then after building do  "cd build && make install"

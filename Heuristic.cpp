@@ -185,7 +185,8 @@ void initialize_solution(struct problem& p, struct solution& s) { // Here everyt
 		s.routes[vehicle_id].departure_time = 0.0;
 	}
 }
-
+//FIXME: Optimise the following 4 block of code.
+//REFACTOR: Try memcpy or copy-constructors (i.e. change solution to a class)
 void update_solution(struct problem& p, struct solution& s1, struct solution& s2) { // In this update_solution everything is actually copied from one solution to the other one (s2 = s1)
 
 	s2.total_distance_cost = s1.total_distance_cost;
@@ -277,15 +278,16 @@ void change_update_solution_3(problem& p, solution& s1, solution& s2, int vehicl
 	s1.routes[vehicle2].weighted_route_duration = s2.routes[vehicle1].weighted_route_duration;
 	s1.routes[vehicle2].departure_time = s2.routes[vehicle1].departure_time;
 }
-
+//FIXME: This function is wrong (returns twice!!!?)
 vector<int> position_removed_customers(problem& p, solution& s, int customer_id) { // This function is made to determine the route and the position of the customers that will be removed in the perturbation (random % of customers that will be removed)
 
 	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
 		for (size_t position = 1; position < s.routes[vehicle_id].route.size(); position++) {
 			if (customer_id == s.routes[vehicle_id].route[position]) {
+				//FIXME: These 2 variables does nothing....
 				int route = vehicle_id;
 				int route_position = position;
-
+				//TODO: W
 				s.route_customer.push_back(route);
 				s.position_customer.push_back(position);
 
@@ -845,7 +847,7 @@ void perform_best_insertion_for_swap(struct problem& p, struct solution& s, int 
 	delete[] s_try.routes;
 	delete[] s_recourse.routes;
 }
-
+//REFACTOR: Seperate the initial insertion code from the COST calculations
 void perform_best_insertion(struct problem& p, struct solution& s, int customer_id) { // Function to check the best route and position to insert a customer (taking into account the load, schedule, ... conditions)
 
 	double best_cost = DBL_MAX;
@@ -854,7 +856,8 @@ void perform_best_insertion(struct problem& p, struct solution& s, int customer_
 	struct solution s_try;
 	initialize_solution(p, s_try);
 	update_solution(p, s, s_try);
-
+	
+	//REFACTOR: Try to use Merge_SORT 
 	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
 		for (size_t position = 1; position < s.routes[vehicle_id].route.size(); position++) {
 			s_try.routes[vehicle_id].route[position] = s.routes[vehicle_id].route[position];
@@ -894,19 +897,15 @@ void perform_best_insertion(struct problem& p, struct solution& s, int customer_
 
 							bereken_gewogen_route_cost(p, s_try, s_recourse, vehicle_id);
 							calculate_total_cost(p, s_try);
-
 							//cout << "inserted customer " << customer_id << " vehicle " << vehicle_id << " position " << position << " cost " << s_try.total_cost <<  "\n"; 
-							
 							//cout << "stry total cost " << s_try.total_cost << " best cost " << best_cost << "\n";
 							if (s_try.total_cost < best_cost) {
 
 								best_cost = s_try.total_cost;
 								best_vehicle_id = vehicle_id;
 								best_position = position;
-								 
 								//cout << "best position (1) " << best_position << "\n";
 								//cout << "best vehicle id (1) " << best_vehicle_id << "\n";
-
 								//cout << "klant " << customer_id << " vehicle " << best_vehicle_id << " position " << best_position << " cost " << best_cost << "\n"; 
 
 							}
@@ -968,9 +967,9 @@ vector<double> probability_of_failure(problem& p, solution& s, int vehicle_id) {
 
 	// Initialise with 0 for depot point.
 	vector<double> failure{ 0.0 }; // the different probabilities are put in a vector
-
+	// If the code mistkinly got a route {0, 0} which has no clients but only starts and ends at depot.
 	if (s.routes[vehicle_id].route.size() == 2) {
-
+		// End with 0 for depot point.
 		failure.push_back(0.0);
 	}
 
@@ -991,15 +990,6 @@ vector<double> probability_of_failure(problem& p, solution& s, int vehicle_id) {
 
 			customersIDs.push_back(std::to_string(p.nodes[s.routes[vehicle_id].route[i]].order_nr));
 		}
-
-		//cout << "size " << customersIDs.size() << "\n";
-
-		//for (int i = 0; i < customersIDs.size(); i++) {
-		//	cout << "customersIDs " << customersIDs[i] << " ";
-		//}
-
-		//cout << "\n";
-
 		std::vector<std::vector<double>> emplDists = p.pe.getEmpricialDistributions(customersIDs);
 		vector<double> jointCdfRes = p.pe.jointCDF(emplDists);
 		failure.insert(failure.end(), jointCdfRes.begin(), jointCdfRes.end());
