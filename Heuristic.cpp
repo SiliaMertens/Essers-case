@@ -55,9 +55,9 @@ void read_data(problem& p) {
 	cout << "vehicles " << p.n_vehicles << "\n";
 	node current_node;
 
-	//TODO: Check if the depot.order_nr is correct and needed?!!
+	//TODO: Check if the depot.order_nr is correct and needed?!! Also the demand, lower_tw, upper_tw, service_dur
 	infile >> current_node.depot_country // depot information
-		>> current_node.depot_postal_code >> current_node.depot_street >> current_node.depot_town >> current_node.order_nr >> current_node.depot_demand >> current_node.depot_lower_tw >> current_node.depot_upper_tw >> current_node.depot_service_dur;
+		>> current_node.depot_postal_code >> current_node.depot_street >> current_node.depot_town >> current_node.order_nr >> current_node.demand >> current_node.lower_tw >> current_node.upper_tw >> current_node.service_dur;
 	//Push the depot node in the vector
 	p.nodes.push_back(current_node);
 	
@@ -130,6 +130,10 @@ void read_data(problem& p) {
 
 	cout << "customers " << p.n_customers << "\n";
 	cout << "nodes " << p.n_nodes << "\n";
+	for(const auto &n : p.nodes){
+		cout << "ordernumber " << n.order_nr << "\n";
+	}
+	
 
 	infile.close();
 }
@@ -167,7 +171,7 @@ void initialize_solution(struct problem& p, struct solution& s) { // Here everyt
 	s.position_customer = {};
 
 	//TODO: clean
-	// s.routes = new route[p.n_vehicles];
+	s.routes = new route[p.n_vehicles];
 
 	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
 		s.routes[vehicle_id].route = { 0, 0 };

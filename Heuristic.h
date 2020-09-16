@@ -74,11 +74,14 @@ struct route {
 	double weighted_route_cost;
 	double weighted_distance_cost;
 	double weighted_route_duration;
+	double weighted_time_window_violation;
+	double weighted_overtime;
+	double weighted_driving_time;
 	std::vector<double> probability;
 	double departure_time;
 };
 struct solution {
-	std::vector<route> routes;
+	route* routes;
 	double total_distance_cost;
 	int number_of_vehicles_used;
 	double total_route_duration;
