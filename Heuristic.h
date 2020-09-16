@@ -20,7 +20,7 @@ struct node {
 	std::string unit_description;
 	std::string collection_date;
 	std::string delivery_date;
-	long long int order_nr;
+	unsigned int order_nr;
 	int high_security_indicator;
 	int temperature_controlled_indicator;
 	int ADR_indicator;
@@ -46,7 +46,7 @@ struct node {
 };
 struct problem {
 	std::string collection_date;
-	node* nodes;
+	std::vector<node> nodes;
 	int n_lines;
 	int n_nodes;
 	int n_customers;
@@ -78,7 +78,7 @@ struct route {
 	double departure_time;
 };
 struct solution {
-	route* routes;
+	std::vector<route> routes;
 	double total_distance_cost;
 	int number_of_vehicles_used;
 	double total_route_duration;

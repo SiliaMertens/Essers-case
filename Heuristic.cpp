@@ -32,34 +32,35 @@ void read_data(problem& p) {
 	ifstream infile;
     cout << "Reading data_file '" << data_file << "'\n";
 	infile.open(data_file);
-    if (!infile.is_open())
-        cerr << "Error, failed to open data_file '" << data_file << "'\n";
+    if (!infile.is_open()){
+        throw std::runtime_error("unable to open file: " + data_file);
+	}
 
 	string line, collection_date, unit_description, delivery_date;
-	long long int order_nr;
+	unsigned int order_nr;
 	int high_sec_indicator, temp_indicator, ADR_indicator;
 	string country;
 	int relation_nr, postal_code;
 	string street, town;
-	int lower_tw, upper_tw;
+	int lower_tw, upper_tw, service_dur;
 	string flow_of_goods, transport_type;
 	double demand;
-	int service_dur, index_count = 1;
+	int index_count = 1;
 	bool is_collection_date_visited = false;
 
 	p.n_customers = 0;
-	p.n_lines = 61072; // number of lines in the text file
-	p.nodes = new node[p.n_lines];
 
 	infile >> p.n_vehicles >> p.vehicle_cap >> p.max_operating_time >> p.max_route_duration;
 
 	cout << "vehicles " << p.n_vehicles << "\n";
+	node current_node;
 
-	infile >> p.nodes[0].depot_country // depot information
-		>> p.nodes[0].depot_postal_code >> p.nodes[0].depot_street >> p.nodes[0].depot_town >> p.nodes[0].order_nr >> p.nodes[0].demand >> p.nodes[0].lower_tw >> p.nodes[0].upper_tw >> p.nodes[0].service_dur;
-
-	//cout << "depot country " << p.nodes[0].depot_country << " " << p.nodes[0].depot_street << " " << p.nodes[0].demand << "\n";
-	//Get a full line until the line-break "\n"
+	//TODO: Check if the depot.order_nr is correct and needed?!!
+	infile >> current_node.depot_country // depot information
+		>> current_node.depot_postal_code >> current_node.depot_street >> current_node.depot_town >> current_node.order_nr >> current_node.depot_demand >> current_node.depot_lower_tw >> current_node.depot_upper_tw >> current_node.depot_service_dur;
+	//Push the depot node in the vector
+	p.nodes.push_back(current_node);
+	
 	while (getline(infile, line))
 	{
 		//Make a stream of strings from the line.
@@ -70,33 +71,36 @@ void read_data(problem& p) {
 		{
 			try
 			{
+				//Reset the current_node variable to be assigned new values
+				current_node = {};
 				//Get the rest of the data.
 				sstrm >> unit_description >> delivery_date >> order_nr >> high_sec_indicator >> temp_indicator >> ADR_indicator >> relation_nr >> country >> postal_code >> street >> town >> lower_tw >> upper_tw >> flow_of_goods >> transport_type >> demand >> service_dur;
 
 				// here the collection date is selected which you will use to run the algorithm. The variables are put in the struct.
-				p.nodes[index_count].collection_date = collection_date;
-				p.nodes[index_count].unit_description = unit_description;
-				p.nodes[index_count].delivery_date = delivery_date;
-				p.nodes[index_count].order_nr = order_nr;
-				p.nodes[index_count].high_security_indicator = high_sec_indicator;
-				p.nodes[index_count].temperature_controlled_indicator = temp_indicator;
-				p.nodes[index_count].ADR_indicator = ADR_indicator;
-				p.nodes[index_count].pick_up_relation_nr = relation_nr;
-				p.nodes[index_count].pick_up_country = country;
-				p.nodes[index_count].pick_up_postal_code = postal_code;
-				p.nodes[index_count].pick_up_street = street;
-				p.nodes[index_count].pick_up_town = town;
-				p.nodes[index_count].lower_tw = lower_tw;
-				p.nodes[index_count].upper_tw = upper_tw;
-				p.nodes[index_count].flow_of_goods = flow_of_goods;
-				p.nodes[index_count].transport_type = transport_type;
-				p.nodes[index_count].demand = demand;
-				p.nodes[index_count].service_dur = service_dur;
+
+				current_node.collection_date = collection_date;
+				current_node.unit_description = unit_description;
+				current_node.delivery_date = delivery_date;
+				current_node.order_nr = order_nr;
+				current_node.high_security_indicator = high_sec_indicator;
+				current_node.temperature_controlled_indicator = temp_indicator;
+				current_node.ADR_indicator = ADR_indicator;
+				current_node.pick_up_relation_nr = relation_nr;
+				current_node.pick_up_country = country;
+				current_node.pick_up_postal_code = postal_code;
+				current_node.pick_up_street = street;
+				current_node.pick_up_town = town;
+				current_node.lower_tw = lower_tw;
+				current_node.upper_tw = upper_tw;
+				current_node.flow_of_goods = flow_of_goods;
+				current_node.transport_type = transport_type;
+				current_node.demand = demand;
+				current_node.service_dur = service_dur;
 
 				//Temprary counter for the index. Hence, p.n_customers can also be used (i.e. they are both the same increment).
 
-				//cout << "collectiondate " << p.nodes[index_count].collection_date << " ordernr " << p.nodes[index_count].order_nr << " lower tw " << p.nodes[index_count].lower_tw << "upper tw" << p.nodes[index_count].upper_tw << " demand " << p.nodes[index_count].demand << "\n";
-
+				p.nodes.push_back(current_node);
+				//Keep count only to show the error if exist
 				index_count++;
 				// To break later if other day is reached.
 				is_collection_date_visited = true;
@@ -149,8 +153,6 @@ void read_distance_and_time_matrix(struct problem& p) { // A text file is being 
 		infile >> p.distance_matrix[a * p.n_nodes + b];
 		infile >> p.time_matrix[a * p.n_nodes + b];
 
-		//cout << a << " " << b << " distance " << p.distance_matrix[a * p.n_nodes + b] << " time " << p.time_matrix[a * p.n_nodes + b] << "\n";
-
 	}
 
 }
@@ -164,7 +166,8 @@ void initialize_solution(struct problem& p, struct solution& s) { // Here everyt
 	s.route_customer = {};
 	s.position_customer = {};
 
-	s.routes = new route[p.n_vehicles];
+	//TODO: clean
+	// s.routes = new route[p.n_vehicles];
 
 	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
 		s.routes[vehicle_id].route = { 0, 0 };
