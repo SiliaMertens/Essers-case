@@ -186,7 +186,24 @@ int main(int argc, char *argv[])
 		cout << "total best " << s_total_best.total_cost << "\n";
 		//cout << "ILS best " << s_ILS_best.total_cost << "\n";
 	}
+	/*
+	-----------------------
+	END: Relocate flow
+	-----------------------
+	*/
 
+	/*
+	-----------------------
+	START: SWAP flow
+	-----------------------
+	- Swap two customers from different routes.
+		Differences with relocate:
+			- Never in the same routes.
+			- Current Route length is never change in swap whereas in relocate it does remove from one route and insert in another route (changing the length of both routes).
+	- The swap happens for all routes, for all clients (see inside swap()). 
+	- The swap flow stops when there is no more improvments (note: current setup is considering only one relocation at a time)
+	*/
+	// Store the best solution as the previous best.
 	update_solution(p, s_local_best, s_prev);
 	swap(p, s_prev, s_curr, s_local_best);
 	// while loop uitvoeren op SWAP totdat er geen verbeteringen meer zijn

@@ -39,15 +39,10 @@ struct node {
 	std::string depot_country;
 	std::string depot_street;
 	std::string depot_town;
-	double depot_demand;
-	double depot_lower_tw;
-	double depot_upper_tw;
-	double depot_service_dur;
 };
 struct problem {
 	std::string collection_date;
 	std::vector<node> nodes;
-	int n_lines;
 	int n_nodes;
 	int n_customers;
 	int n_vehicles;
@@ -104,7 +99,7 @@ void initialize_solution(problem& p, solution& s);
 void update_solution(problem& p, solution& s1, solution& s2);
 void change_update_solution_1(problem& p, solution& s1, solution& s2, int vehicle1);
 void change_update_solution_2(problem& p, solution& s1, int vehicle1, int vehicle2);
-
+void change_update_solution_3(problem& p, solution& s1, solution& s2, int vehicle1, int vehicle2);
 std::vector<int> position_removed_customers(problem& p, solution& s, int customer_id);
 void bereken_route_cost_zonder_recourse(problem& p, solution& s, int vehicle_id);
 void bereken_route_cost(problem& p, solution& s, int vehicle_id);
@@ -136,6 +131,7 @@ std::vector<double> probability_of_failure(problem& p, solution& s, int vehicle_
 
 /* Output */
 void write_output_file(problem& p, solution& s);
+//FIXME: Not implemented but defined.
 void write_output_file_perturbation(problem& p, solution& s);
 
 #endif
