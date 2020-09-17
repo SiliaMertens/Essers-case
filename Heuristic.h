@@ -16,7 +16,8 @@ extern double allowable_operating_time_cost;
 class ProbabilityEstimator; // forward declaration
 
 /* Define structs */
-struct node {
+struct node
+{
 	std::string unit_description;
 	std::string collection_date;
 	std::string delivery_date;
@@ -40,7 +41,8 @@ struct node {
 	std::string depot_street;
 	std::string depot_town;
 };
-struct problem {
+struct problem
+{
 	std::string collection_date;
 	std::vector<node> nodes;
 	int n_nodes;
@@ -49,11 +51,12 @@ struct problem {
 	double vehicle_cap;
 	int max_operating_time;
 	int max_route_duration;
-	double* distance_matrix;
-	double* time_matrix;
+	double *distance_matrix;
+	double *time_matrix;
 	ProbabilityEstimator pe;
 };
-struct route {
+struct route
+{
 	std::vector<int> route;
 	std::vector<double> load;
 	std::vector<double> schedule;
@@ -75,8 +78,9 @@ struct route {
 	std::vector<double> probability;
 	double departure_time;
 };
-struct solution {
-	route* routes;
+struct solution
+{
+	route *routes;
 	double total_distance_cost;
 	int number_of_vehicles_used;
 	double total_route_duration;
@@ -89,49 +93,48 @@ struct solution {
 	bool possible_insertion;
 };
 
-
 /* Preprocessing functions */
-void read_data(problem& p);
-void read_distance_and_time_matrix(struct problem& p);
+void read_data(problem &p);
+void read_distance_and_time_matrix(struct problem &p);
 
 /* Solution management functions */
-void initialize_solution(problem& p, solution& s);
-void update_solution(problem& p, solution& s1, solution& s2);
-void change_update_solution_1(problem& p, solution& s1, solution& s2, int vehicle1);
-void change_update_solution_2(problem& p, solution& s1, int vehicle1, int vehicle2);
-void change_update_solution_3(problem& p, solution& s1, solution& s2, int vehicle1, int vehicle2);
-std::vector<int> position_removed_customers(problem& p, solution& s, int customer_id);
-void bereken_route_cost_zonder_recourse(problem& p, solution& s, int vehicle_id);
-void bereken_route_cost(problem& p, solution& s, int vehicle_id);
-std::vector<double> calculate_probabilities(problem& p, solution& s, int vehicle_id);
-void construct_failure_routes(problem& p, solution& s1, solution& s2, int vehicle_id, int position);
-void bereken_gewogen_route_cost(problem& p, solution& s1, solution s2, int vehicle_id);
-void calculate_total_cost(problem& p, solution& s);
-void change(problem& p, struct solution& s, int vehicle1, int vehicle2);
-int last_route(problem& p, solution& s);
+void initialize_solution(problem &p, solution &s);
+void update_solution(problem &p, solution &s1, solution &s2);
+void change_update_solution_1(problem &p, solution &s1, solution &s2, int vehicle1);
+void change_update_solution_2(problem &p, solution &s1, int vehicle1, int vehicle2);
+void change_update_solution_3(problem &p, solution &s1, solution &s2, int vehicle1, int vehicle2);
+std::vector<int> position_removed_customers(problem &p, solution &s, int customer_id);
+void bereken_route_cost_zonder_recourse(problem &p, solution &s, int vehicle_id);
+void bereken_route_cost(problem &p, solution &s, int vehicle_id);
+std::vector<double> calculate_probabilities(problem &p, solution &s, int vehicle_id);
+void construct_failure_routes(problem &p, solution &s1, solution &s2, int vehicle_id, int position);
+void bereken_gewogen_route_cost(problem &p, solution &s1, solution s2, int vehicle_id);
+void calculate_total_cost(problem &p, solution &s);
+void change(problem &p, struct solution &s, int vehicle1, int vehicle2);
+int last_route(problem &p, solution &s);
 
 /* Local search operators */
-void relocate(struct problem& p, struct solution& s1, struct solution& s2, struct solution& s3);
-void swap(struct problem& p, struct solution& s_prev, struct solution& s_curr, struct solution& s_best);
+void relocate(struct problem &p, struct solution &s1, struct solution &s2, struct solution &s3);
+void swap(struct problem &p, struct solution &s_prev, struct solution &s_curr, struct solution &s_best);
 
 /* Supporting functions */
-void remove_customer(problem& p, struct solution& s, int vehicle_id, int position);
-void insert_customer(problem& p, struct solution& s, int customer_id, int vehicle_id, int position);
-void perform_best_insertion(problem& p, solution& s, int customer_id);
-void perform_best_insertion_for_swap(struct problem& p, struct solution& s, int customer_id, int vehicle_id);
-void update_load(problem& p, solution& s, int vehicle_id);
-void update_schedule(problem& p, solution& s, int vehicle_id);
-void update_earliest_time(problem& p, solution& s, int vehicle_id);
-void update_latest_time(problem& p, solution& s, int vehicle_id);
+void remove_customer(problem &p, struct solution &s, int vehicle_id, int position);
+void insert_customer(problem &p, struct solution &s, int customer_id, int vehicle_id, int position);
+void perform_best_insertion(problem &p, solution &s, int customer_id);
+void perform_best_insertion_for_swap(struct problem &p, struct solution &s, int customer_id, int vehicle_id);
+void update_load(problem &p, solution &s, int vehicle_id);
+void update_schedule(problem &p, solution &s, int vehicle_id);
+void update_earliest_time(problem &p, solution &s, int vehicle_id);
+void update_latest_time(problem &p, solution &s, int vehicle_id);
 
 /* Feasibility checks */
-bool check_load(problem& p, solution& s, int vehicle_id);
-bool check_schedule(problem& p, solution& s, int vehicle_id);
-std::vector<double> probability_of_failure(problem& p, solution& s, int vehicle_id);
+bool check_load(problem &p, solution &s, int vehicle_id);
+bool check_schedule(problem &p, solution &s, int vehicle_id);
+std::vector<double> probability_of_failure(problem &p, solution &s, int vehicle_id);
 
 /* Output */
-void write_output_file(problem& p, solution& s);
+void write_output_file(problem &p, solution &s);
 //FIXME: Not implemented but defined.
-void write_output_file_perturbation(problem& p, solution& s);
+void write_output_file_perturbation(problem &p, solution &s);
 
 #endif

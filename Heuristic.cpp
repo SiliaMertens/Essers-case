@@ -15,23 +15,24 @@
 #include <string>
 #include <time.h>
 #include <vector>
-#include <ctime> 
+#include <ctime>
 
 #include "ProbabilityEstimator.h"
 #include "Heuristic.h"
 
 using namespace std;
 
-
 extern string data_file;
 extern string coordinates_file;
 
-void read_data(problem& p) {
+void read_data(problem &p)
+{
 
 	ifstream infile;
 	infile.open(data_file);
-    if (!infile.is_open()){
-        throw std::runtime_error("unable to open file: " + data_file);
+	if (!infile.is_open())
+	{
+		throw std::runtime_error("unable to open file: " + data_file);
 	}
 
 	string line, collection_date, unit_description, delivery_date;
@@ -58,7 +59,7 @@ void read_data(problem& p) {
 		>> current_node.depot_postal_code >> current_node.depot_street >> current_node.depot_town >> current_node.order_nr >> current_node.demand >> current_node.lower_tw >> current_node.upper_tw >> current_node.service_dur;
 	//Push the depot node in the vector
 	p.nodes.push_back(current_node);
-	
+
 	while (getline(infile, line))
 	{
 		//Make a stream of strings from the line.
@@ -104,7 +105,7 @@ void read_data(problem& p) {
 				is_collection_date_visited = true;
 				p.n_customers++; // the number of customers that are present in one day is calculated here
 			}
-			catch (const std::exception& e)
+			catch (const std::exception &e)
 			{
 				throw std::runtime_error("read_data() --> Error at line " + std::to_string(index_count + 1) + " --> Error is: " + e.what());
 			}
@@ -132,29 +133,30 @@ void read_data(problem& p) {
 	infile.close();
 }
 
-void read_distance_and_time_matrix(struct problem& p) { // dit moet via Graphhopper, afstanden die daar berekend zijn, aanroepen. Bestand inlezen, berekeningen met x-coord en y-coord moet niet meer gedaan worden. 
+void read_distance_and_time_matrix(struct problem &p)
+{ // dit moet via Graphhopper, afstanden die daar berekend zijn, aanroepen. Bestand inlezen, berekeningen met x-coord en y-coord moet niet meer gedaan worden.
 
 	p.distance_matrix = new double[(long long)p.n_nodes * p.n_nodes];
 	p.time_matrix = new double[(long long)p.n_nodes * p.n_nodes];
 	// waarschuwing Warning C26451: Arithmetic overflow: Using operator '%operator%' on a %size1% byte value and then casting the result to a %size2% byte value. Cast the value to the wider type before calling operator '%operator%' to avoid overflow
-	// door long long valt deze waarschuwing weg 
+	// door long long valt deze waarschuwing weg
 
 	ifstream infile;
 	infile.open(coordinates_file);
 
-	for (int i = 0; i < p.n_nodes * p.n_nodes; i++) {
+	for (int i = 0; i < p.n_nodes * p.n_nodes; i++)
+	{
 		int a = 0;
 		int b = 0;
 		infile >> a;
 		infile >> b;
 		infile >> p.distance_matrix[a * p.n_nodes + b];
 		infile >> p.time_matrix[a * p.n_nodes + b];
-
 	}
-
 }
 
-void initialize_solution(struct problem& p, struct solution& s) {
+void initialize_solution(struct problem &p, struct solution &s)
+{
 
 	s.total_distance_cost = 0.0;
 	s.number_of_vehicles_used = 0;
@@ -169,12 +171,13 @@ void initialize_solution(struct problem& p, struct solution& s) {
 	//TODO: clean
 	s.routes = new route[p.n_vehicles];
 
-	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
-		s.routes[vehicle_id].route = { 0, 0 };
-		s.routes[vehicle_id].load = { 0, 0 };
-		s.routes[vehicle_id].earliest_time = { p.nodes[0].lower_tw, p.nodes[0].lower_tw };
-		s.routes[vehicle_id].latest_time = { p.nodes[p.n_nodes - 1].upper_tw, p.nodes[p.n_nodes - 1].upper_tw };
-		s.routes[vehicle_id].schedule = { s.routes[vehicle_id].earliest_time[s.routes[vehicle_id].route.size() - 1], s.routes[vehicle_id].earliest_time[s.routes[vehicle_id].route.size() - 1] };
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+	{
+		s.routes[vehicle_id].route = {0, 0};
+		s.routes[vehicle_id].load = {0, 0};
+		s.routes[vehicle_id].earliest_time = {p.nodes[0].lower_tw, p.nodes[0].lower_tw};
+		s.routes[vehicle_id].latest_time = {p.nodes[p.n_nodes - 1].upper_tw, p.nodes[p.n_nodes - 1].upper_tw};
+		s.routes[vehicle_id].schedule = {s.routes[vehicle_id].earliest_time[s.routes[vehicle_id].route.size() - 1], s.routes[vehicle_id].earliest_time[s.routes[vehicle_id].route.size() - 1]};
 		s.routes[vehicle_id].distance_cost = 0.0;
 		s.routes[vehicle_id].route_used = 0;
 		s.routes[vehicle_id].route_duration = 0.0;
@@ -190,11 +193,11 @@ void initialize_solution(struct problem& p, struct solution& s) {
 		s.routes[vehicle_id].weighted_driving_time = 0.0;
 		s.routes[vehicle_id].departure_time = 0.0;
 	}
-
 }
 //FIXME: Optimise the following 4 block of code.
 //REFACTOR: Try memcpy or copy-constructors (i.e. change solution to a class)
-void update_solution(struct problem& p, struct solution& s1, struct solution& s2) {
+void update_solution(struct problem &p, struct solution &s1, struct solution &s2)
+{
 
 	s2.total_distance_cost = s1.total_distance_cost;
 	s2.number_of_vehicles_used = s1.number_of_vehicles_used;
@@ -210,21 +213,21 @@ void update_solution(struct problem& p, struct solution& s1, struct solution& s2
 
 	//
 
-
-	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+	{
 		s2.routes[vehicle_id].route.resize(s1.routes[vehicle_id].route.size());
 		s2.routes[vehicle_id].load.resize(s1.routes[vehicle_id].load.size());
 		s2.routes[vehicle_id].earliest_time.resize(s1.routes[vehicle_id].earliest_time.size());
 		s2.routes[vehicle_id].latest_time.resize(s1.routes[vehicle_id].latest_time.size());
 		s2.routes[vehicle_id].schedule.resize(s1.routes[vehicle_id].schedule.size());
 
-		for (int index = 0; index < s1.routes[vehicle_id].route.size(); index++) {
+		for (int index = 0; index < s1.routes[vehicle_id].route.size(); index++)
+		{
 			s2.routes[vehicle_id].route[index] = s1.routes[vehicle_id].route[index];
 			s2.routes[vehicle_id].load[index] = s1.routes[vehicle_id].load[index];
 			s2.routes[vehicle_id].earliest_time[index] = s1.routes[vehicle_id].earliest_time[index];
 			s2.routes[vehicle_id].latest_time[index] = s1.routes[vehicle_id].latest_time[index];
 			s2.routes[vehicle_id].schedule[index] = s1.routes[vehicle_id].schedule[index];
-
 		}
 	}
 
@@ -240,7 +243,8 @@ void update_solution(struct problem& p, struct solution& s1, struct solution& s2
 	//finish = std::chrono::high_resolution_clock::now();
 	//std::cout << "tweede methode " << std::chrono::duration_cast<std::chrono::nanoseconds>(finish - start).count() << "ns\n";
 
-	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+	{
 		//s2.routes[vehicle_id].route = s1.routes[vehicle_id].route;
 		//s2.routes[vehicle_id].load = s1.routes[vehicle_id].load;
 		//s2.routes[vehicle_id].earliest_time = s1.routes[vehicle_id].earliest_time;
@@ -264,7 +268,8 @@ void update_solution(struct problem& p, struct solution& s1, struct solution& s2
 	}
 }
 
-void change_update_solution_1(problem& p, solution& s1, solution& s2, int vehicle1) {
+void change_update_solution_1(problem &p, solution &s1, solution &s2, int vehicle1)
+{
 
 	//s2.routes[vehicle1].route.resize(s1.routes[vehicle1].route.size());
 	//s2.routes[vehicle1].load.resize(s1.routes[vehicle1].load.size());
@@ -301,10 +306,10 @@ void change_update_solution_1(problem& p, solution& s1, solution& s2, int vehicl
 	s2.routes[vehicle1].weighted_overtime = s1.routes[vehicle1].weighted_overtime;
 	s2.routes[vehicle1].weighted_driving_time = s1.routes[vehicle1].weighted_driving_time;
 	s2.routes[vehicle1].departure_time = s1.routes[vehicle1].departure_time;
-
 }
 
-void change_update_solution_2(problem& p, solution& s1, int vehicle1, int vehicle2) {
+void change_update_solution_2(problem &p, solution &s1, int vehicle1, int vehicle2)
+{
 
 	s1.routes[vehicle2].route = s1.routes[vehicle1].route;
 	s1.routes[vehicle2].load = s1.routes[vehicle1].load;
@@ -328,7 +333,8 @@ void change_update_solution_2(problem& p, solution& s1, int vehicle1, int vehicl
 	s1.routes[vehicle2].departure_time = s1.routes[vehicle1].departure_time;
 }
 
-void change_update_solution_3(problem& p, solution& s1, solution& s2, int vehicle1, int vehicle2) {
+void change_update_solution_3(problem &p, solution &s1, solution &s2, int vehicle1, int vehicle2)
+{
 	s1.routes[vehicle2].route = s2.routes[vehicle1].route;
 	s1.routes[vehicle2].load = s2.routes[vehicle1].load;
 	s1.routes[vehicle2].earliest_time = s2.routes[vehicle1].earliest_time;
@@ -351,13 +357,17 @@ void change_update_solution_3(problem& p, solution& s1, solution& s2, int vehicl
 	s1.routes[vehicle2].departure_time = s2.routes[vehicle1].departure_time;
 }
 
-vector<int> position_removed_customers(problem& p, solution& s, int customer_id) {
+vector<int> position_removed_customers(problem &p, solution &s, int customer_id)
+{
 
 	//cout << "customer " << customer_id << "\n";
 
-	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
-		for (int position = 1; position < s.routes[vehicle_id].route.size(); position++) {
-			if (customer_id == s.routes[vehicle_id].route[position]) {
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+	{
+		for (int position = 1; position < s.routes[vehicle_id].route.size(); position++)
+		{
+			if (customer_id == s.routes[vehicle_id].route[position])
+			{
 				//FIXME: These 2 variables does nothing....
 				int route = vehicle_id;
 				int route_position = position;
@@ -378,27 +388,30 @@ vector<int> position_removed_customers(problem& p, solution& s, int customer_id)
 
 	return s.route_customer;
 	return s.position_customer;
-
 }
 
-void bereken_route_cost_zonder_recourse(problem& p, solution& s, int vehicle_id) {
+void bereken_route_cost_zonder_recourse(problem &p, solution &s, int vehicle_id)
+{
 
 	s.routes[vehicle_id].route_used = 0;
 	s.routes[vehicle_id].route_cost = 0;
 
-	if (s.routes[vehicle_id].route.size() == 2) {
+	if (s.routes[vehicle_id].route.size() == 2)
+	{
 		s.routes[vehicle_id].route_cost = 0.0;
 		s.routes[vehicle_id].route_used = 0;
 	}
 
-	else {
+	else
+	{
 		s.routes[vehicle_id].route_cost = fixed_vehicle_cost;
 		s.routes[vehicle_id].route_used = 1;
 	}
 
 	s.routes[vehicle_id].distance_cost = 0.0;
 
-	for (int i = 0; i < s.routes[vehicle_id].route.size() - 1; i++) {
+	for (int i = 0; i < s.routes[vehicle_id].route.size() - 1; i++)
+	{
 		s.routes[vehicle_id].distance_cost += (p.distance_matrix[s.routes[vehicle_id].route[i] * p.n_nodes + s.routes[vehicle_id].route[i + 1]]) * km_cost;
 
 		s.routes[vehicle_id].route_cost += s.routes[vehicle_id].distance_cost;
@@ -406,12 +419,14 @@ void bereken_route_cost_zonder_recourse(problem& p, solution& s, int vehicle_id)
 
 	s.routes[vehicle_id].schedule.resize(s.routes[vehicle_id].route.size());
 
-	s.routes[vehicle_id].schedule[s.routes[vehicle_id].route.size() - 1] = s.routes[vehicle_id].earliest_time[s.routes[vehicle_id].route.size() - 1]; // hier vanaf vanachter beginnen tellen 
+	s.routes[vehicle_id].schedule[s.routes[vehicle_id].route.size() - 1] = s.routes[vehicle_id].earliest_time[s.routes[vehicle_id].route.size() - 1]; // hier vanaf vanachter beginnen tellen
 
-	for (int position = s.routes[vehicle_id].route.size() - 2; position >= 0; position--) {
+	for (int position = s.routes[vehicle_id].route.size() - 2; position >= 0; position--)
+	{
 		s.routes[vehicle_id].schedule[position] = s.routes[vehicle_id].schedule[position + 1] - p.nodes[s.routes[vehicle_id].route[position]].service_dur -
-			p.time_matrix[s.routes[vehicle_id].route[position] * p.n_nodes + s.routes[vehicle_id].route[position + 1]];
-		if (s.routes[vehicle_id].schedule[position] > p.nodes[s.routes[vehicle_id].route[position]].upper_tw) {
+												  p.time_matrix[s.routes[vehicle_id].route[position] * p.n_nodes + s.routes[vehicle_id].route[position + 1]];
+		if (s.routes[vehicle_id].schedule[position] > p.nodes[s.routes[vehicle_id].route[position]].upper_tw)
+		{
 			s.routes[vehicle_id].schedule[position] = p.nodes[s.routes[vehicle_id].route[position]].upper_tw;
 		}
 	}
@@ -421,50 +436,55 @@ void bereken_route_cost_zonder_recourse(problem& p, solution& s, int vehicle_id)
 	s.routes[vehicle_id].route_duration = (s.routes[vehicle_id].schedule[s.routes[vehicle_id].route.size() - 1] - s.routes[vehicle_id].schedule[0]) * driver_cost;
 
 	s.routes[vehicle_id].route_cost += s.routes[vehicle_id].route_duration;
-
 }
 
-void bereken_route_cost(problem& p, solution& s, int vehicle_id) { // similar to the previous one, but here also the recourse components are included (e.g. time window violation, overtime)
+void bereken_route_cost(problem &p, solution &s, int vehicle_id)
+{ // similar to the previous one, but here also the recourse components are included (e.g. time window violation, overtime)
 
 	s.routes[vehicle_id].route_used = 0;
 	s.routes[vehicle_id].route_cost = 0;
 
-	if (s.routes[vehicle_id].route.size() == 2) {
+	if (s.routes[vehicle_id].route.size() == 2)
+	{
 		s.routes[vehicle_id].route_cost = 0.0;
 		s.routes[vehicle_id].route_used = 0;
 	}
 
-	else {
+	else
+	{
 		s.routes[vehicle_id].route_cost = fixed_vehicle_cost;
 		s.routes[vehicle_id].route_used = 1;
 	}
 
 	s.routes[vehicle_id].distance_cost = 0.0;
 
-	for (int i = 0; i < s.routes[vehicle_id].route.size() - 1; i++) {
+	for (int i = 0; i < s.routes[vehicle_id].route.size() - 1; i++)
+	{
 		s.routes[vehicle_id].distance_cost += (p.distance_matrix[s.routes[vehicle_id].route[i] * p.n_nodes + s.routes[vehicle_id].route[i + 1]]) * km_cost;
 		s.routes[vehicle_id].route_cost += s.routes[vehicle_id].distance_cost;
 	}
 
-	if (s.routes[vehicle_id].distance_cost > p.max_operating_time) {
+	if (s.routes[vehicle_id].distance_cost > p.max_operating_time)
+	{
 		s.routes[vehicle_id].driving_time = (s.routes[vehicle_id].distance_cost - p.max_operating_time) * allowable_operating_time_cost;
 		s.routes[vehicle_id].route_cost += s.routes[vehicle_id].driving_time;
 	}
 
 	s.routes[vehicle_id].schedule.resize(s.routes[vehicle_id].route.size());
 
-	s.routes[vehicle_id].schedule[s.routes[vehicle_id].route.size() - 1] = s.routes[vehicle_id].earliest_time[s.routes[vehicle_id].route.size() - 1]; // hier vanaf vanachter beginnen tellen 
+	s.routes[vehicle_id].schedule[s.routes[vehicle_id].route.size() - 1] = s.routes[vehicle_id].earliest_time[s.routes[vehicle_id].route.size() - 1]; // hier vanaf vanachter beginnen tellen
 
 	s.routes[vehicle_id].schedule[0] = s.routes[vehicle_id].departure_time;
 
-	for (int position = 1; position < s.routes[vehicle_id].route.size(); position++) {
+	for (int position = 1; position < s.routes[vehicle_id].route.size(); position++)
+	{
 		s.routes[vehicle_id].schedule[position] = s.routes[vehicle_id].schedule[position - 1] + p.nodes[s.routes[vehicle_id].route[position - 1]].service_dur +
-			p.time_matrix[s.routes[vehicle_id].route[position - 1] * p.n_nodes + s.routes[vehicle_id].route[position]];
-		if (s.routes[vehicle_id].schedule[position] < p.nodes[s.routes[vehicle_id].route[position]].lower_tw) {
+												  p.time_matrix[s.routes[vehicle_id].route[position - 1] * p.n_nodes + s.routes[vehicle_id].route[position]];
+		if (s.routes[vehicle_id].schedule[position] < p.nodes[s.routes[vehicle_id].route[position]].lower_tw)
+		{
 			s.routes[vehicle_id].schedule[position] = p.nodes[s.routes[vehicle_id].route[position]].lower_tw;
 		}
 	}
-
 
 	s.routes[vehicle_id].route_duration = (s.routes[vehicle_id].schedule[s.routes[vehicle_id].route.size() - 1] - s.routes[vehicle_id].schedule[0]) * driver_cost;
 
@@ -472,8 +492,10 @@ void bereken_route_cost(problem& p, solution& s, int vehicle_id) { // similar to
 
 	s.routes[vehicle_id].route_cost += s.routes[vehicle_id].route_duration;
 
-	for (int position = 1; position < s.routes[vehicle_id].route.size(); position++) {
-		if (s.routes[vehicle_id].earliest_time[position] > p.nodes[s.routes[vehicle_id].route[position]].upper_tw) {
+	for (int position = 1; position < s.routes[vehicle_id].route.size(); position++)
+	{
+		if (s.routes[vehicle_id].earliest_time[position] > p.nodes[s.routes[vehicle_id].route[position]].upper_tw)
+		{
 			s.routes[vehicle_id].time_window_violiation += (s.routes[vehicle_id].earliest_time[position] - p.nodes[s.routes[vehicle_id].route[position]].upper_tw) * time_window_violation_cost;
 
 			s.routes[vehicle_id].route_cost += s.routes[vehicle_id].time_window_violiation;
@@ -482,16 +504,15 @@ void bereken_route_cost(problem& p, solution& s, int vehicle_id) { // similar to
 
 	//cout << "time window violation " << s.routes[vehicle_id].time_window_violiation << "\n";
 
-	if (s.routes[vehicle_id].route_duration > p.max_route_duration) {
+	if (s.routes[vehicle_id].route_duration > p.max_route_duration)
+	{
 		s.routes[vehicle_id].overtime = (s.routes[vehicle_id].route_duration - p.max_route_duration) * overtime_cost;
 		s.routes[vehicle_id].route_cost += s.routes[vehicle_id].overtime;
-
 	}
-
 }
 
-vector<double> calculate_probabilities(problem& p, solution& s, int vehicle_id)
-{ // the probabilities that were put in the two vectors are used here as input. Furthermore, a specific route (with a certain vehicle id) is used as input as well.  
+vector<double> calculate_probabilities(problem &p, solution &s, int vehicle_id)
+{ // the probabilities that were put in the two vectors are used here as input. Furthermore, a specific route (with a certain vehicle id) is used as input as well.
 
 	s.routes[vehicle_id].probability = {}; // initially, there are no probabilities in the vector
 
@@ -535,16 +556,17 @@ vector<double> calculate_probabilities(problem& p, solution& s, int vehicle_id)
 	// i.e. : no failure: 0 1 2 3 0 * corresponding probability, failure at second customer: 0 1 2 0 2 3 0 * corresponding probability, ...
 }
 
-void construct_failure_routes(problem& p, solution& s1, solution& s2, int vehicle_id, int position) {
+void construct_failure_routes(problem &p, solution &s1, solution &s2, int vehicle_id, int position)
+{
 
 	change_update_solution_1(p, s1, s2, vehicle_id);
 
 	insert_customer(p, s2, 0, vehicle_id, position + 1); // terug naar depot, invoegen in de route
 	insert_customer(p, s2, s1.routes[vehicle_id].route[position], vehicle_id, position + 2);
-
 }
 
-void bereken_gewogen_route_cost(problem& p, solution& s1, solution s2, int vehicle_id) { // here, the weighted cost for one vehicle is calculated. As already stated, there are different possibilities where failures can occur in a route. All the different possibilities with their corresponding probabilities are combined here, resulting in a weighted cost
+void bereken_gewogen_route_cost(problem &p, solution &s1, solution s2, int vehicle_id)
+{ // here, the weighted cost for one vehicle is calculated. As already stated, there are different possibilities where failures can occur in a route. All the different possibilities with their corresponding probabilities are combined here, resulting in a weighted cost
 
 	change_update_solution_1(p, s1, s2, vehicle_id);
 	vector<double> violation_risk = {};
@@ -557,13 +579,13 @@ void bereken_gewogen_route_cost(problem& p, solution& s1, solution s2, int vehic
 	s1.routes[vehicle_id].route_used = 0;
 	violation_risk = calculate_probabilities(p, s1, vehicle_id);
 
-	bereken_route_cost_zonder_recourse(p, s1, vehicle_id); // the routecost when there is no failure is calculated here 
+	bereken_route_cost_zonder_recourse(p, s1, vehicle_id); // the routecost when there is no failure is calculated here
 	s1.routes[vehicle_id].weighted_route_cost += s1.routes[vehicle_id].route_cost * violation_risk[0];
 	s1.routes[vehicle_id].weighted_distance_cost += s1.routes[vehicle_id].distance_cost * violation_risk[0];
 	s1.routes[vehicle_id].weighted_route_duration += s1.routes[vehicle_id].route_duration * violation_risk[0];
 
-
-	for (int index = 0; index < s1.routes[vehicle_id].probability.size() - 1; index++) {
+	for (int index = 0; index < s1.routes[vehicle_id].probability.size() - 1; index++)
+	{
 		construct_failure_routes(p, s1, s2, vehicle_id, index);
 
 		bereken_route_cost(p, s2, vehicle_id);
@@ -574,11 +596,11 @@ void bereken_gewogen_route_cost(problem& p, solution& s1, solution s2, int vehic
 		s1.routes[vehicle_id].weighted_time_window_violation += s2.routes[vehicle_id].time_window_violiation * violation_risk[index + 1];
 		s1.routes[vehicle_id].weighted_overtime += s2.routes[vehicle_id].overtime * violation_risk[index + 1];
 		s1.routes[vehicle_id].weighted_driving_time += s2.routes[vehicle_id].driving_time * violation_risk[index + 1];
-
 	}
 }
 
-void calculate_total_cost(problem& p, solution& s) {
+void calculate_total_cost(problem &p, solution &s)
+{
 
 	s.total_cost = 0.0;
 	s.total_distance_cost = 0.0;
@@ -588,7 +610,8 @@ void calculate_total_cost(problem& p, solution& s) {
 	s.total_overtime = 0.0;
 	s.total_driving_time = 0.0;
 
-	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+	{
 		s.total_cost += s.routes[vehicle_id].weighted_route_cost;
 		s.total_distance_cost += s.routes[vehicle_id].weighted_distance_cost;
 		s.number_of_vehicles_used += s.routes[vehicle_id].route_used;
@@ -596,14 +619,14 @@ void calculate_total_cost(problem& p, solution& s) {
 		s.total_time_window_violation += s.routes[vehicle_id].weighted_time_window_violation;
 		s.total_overtime += s.routes[vehicle_id].weighted_overtime;
 		s.total_driving_time += s.routes[vehicle_id].weighted_driving_time;
-
 	}
 
 	//cout << "totale afstand: " << s.total_distance_cost << "\n";
 	//cout << "overtime " << s.total_overtime << "\n";
 }
 
-void change(problem& p, struct solution& s, int vehicle1, int vehicle2) {
+void change(problem &p, struct solution &s, int vehicle1, int vehicle2)
+{
 
 	struct solution s_try;
 	initialize_solution(p, s_try);
@@ -615,15 +638,17 @@ void change(problem& p, struct solution& s, int vehicle1, int vehicle2) {
 	change_update_solution_3(p, s, s_try, vehicle1, vehicle2);
 
 	delete[] s_try.routes;
-
 }
 
-int last_route(problem& p, solution& s) {
+int last_route(problem &p, solution &s)
+{
 
 	int last_vehicle = 0;
 
-	for (int vehicle_id = p.n_vehicles - 1; vehicle_id >= 0; vehicle_id--) {
-		if (s.routes[vehicle_id].route.size() > 2) {
+	for (int vehicle_id = p.n_vehicles - 1; vehicle_id >= 0; vehicle_id--)
+	{
+		if (s.routes[vehicle_id].route.size() > 2)
+		{
 			last_vehicle = vehicle_id;
 
 			return last_vehicle;
@@ -631,13 +656,16 @@ int last_route(problem& p, solution& s) {
 	}
 }
 
-void relocate(struct problem& p, struct solution& s_prev, struct solution& s_curr, struct solution& s_best) {
+void relocate(struct problem &p, struct solution &s_prev, struct solution &s_curr, struct solution &s_best)
+{
 
 	struct solution s_recourse;
 	initialize_solution(p, s_recourse);
 
-	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) { // over alle routes loopen
-		for (int position = 1; position < s_prev.routes[vehicle_id].route.size() - 1; position++) { // over alle klantposities loopen
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+	{ // over alle routes loopen
+		for (int position = 1; position < s_prev.routes[vehicle_id].route.size() - 1; position++)
+		{ // over alle klantposities loopen
 			/*cout << "vehicle " << vehicle_id << " prev route size " << s_prev.routes[vehicle_id].route.size() << "\n";*/
 			int customer_id = s_prev.routes[vehicle_id].route[position];
 			/*cout << "customer_id " << customer_id << "\n";*/
@@ -651,20 +679,21 @@ void relocate(struct problem& p, struct solution& s_prev, struct solution& s_cur
 			update_latest_time(p, s_curr, vehicle_id);
 			update_schedule(p, s_curr, vehicle_id);
 
-			if (s_curr.routes[vehicle_id].route.size() == 2) {
+			if (s_curr.routes[vehicle_id].route.size() == 2)
+			{
 				change(p, s_curr, vehicle_id, last_route(p, s_curr));
 			}
 
 			perform_best_insertion(p, s_curr, customer_id);
 			//cout << "customer_id insertion " << customer_id << "\n";
 
-			if (s_best.total_cost > s_curr.total_cost) {
+			if (s_best.total_cost > s_curr.total_cost)
+			{
 				update_solution(p, s_curr, s_best);
 				update_load(p, s_best, vehicle_id);
 				update_earliest_time(p, s_best, vehicle_id);
 				update_latest_time(p, s_best, vehicle_id);
 				update_schedule(p, s_best, vehicle_id);
-
 			}
 		}
 	}
@@ -672,22 +701,28 @@ void relocate(struct problem& p, struct solution& s_prev, struct solution& s_cur
 	delete[] s_recourse.routes;
 }
 
-void swap(struct problem& p, struct solution& s1, struct solution& s2, struct solution& s3) {
+void swap(struct problem &p, struct solution &s1, struct solution &s2, struct solution &s3)
+{
 
 	struct solution s_recourse;
 	initialize_solution(p, s_recourse);
 
-	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) { // over alle routes loopen
-		for (int position = 1; position < s1.routes[vehicle_id].route.size() - 1; position++) { // over alle klantposities loopen
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+	{ // over alle routes loopen
+		for (int position = 1; position < s1.routes[vehicle_id].route.size() - 1; position++)
+		{ // over alle klantposities loopen
 
-			for (int insert_vehicle_id = 0; insert_vehicle_id < p.n_vehicles; insert_vehicle_id++) {
-				for (int insert_position = 1; insert_position < s1.routes[insert_vehicle_id].route.size() - 1; insert_position++) {
+			for (int insert_vehicle_id = 0; insert_vehicle_id < p.n_vehicles; insert_vehicle_id++)
+			{
+				for (int insert_position = 1; insert_position < s1.routes[insert_vehicle_id].route.size() - 1; insert_position++)
+				{
 
-					if (insert_vehicle_id != vehicle_id) {
+					if (insert_vehicle_id != vehicle_id)
+					{
 
 						int customer_id = s1.routes[vehicle_id].route[position];
 						update_solution(p, s1, s2);
-						remove_customer(p, s2, vehicle_id, position); // klant uit de route halen 
+						remove_customer(p, s2, vehicle_id, position); // klant uit de route halen
 						//update_solution(p, s2, s_recourse);
 						bereken_gewogen_route_cost(p, s2, s_recourse, vehicle_id);
 						calculate_total_cost(p, s2);
@@ -714,11 +749,16 @@ void swap(struct problem& p, struct solution& s1, struct solution& s2, struct so
 						int successor_id = s2.routes[insert_vehicle_id].route[insert_position];
 
 						if (s2.routes[insert_vehicle_id].earliest_time[insert_position - 1] + p.nodes[s2.routes[insert_vehicle_id].route[insert_position - 1]].service_dur +
-							p.time_matrix[predecessor_id * p.n_nodes + customer_id] <= p.nodes[customer_id].upper_tw &&
+									p.time_matrix[predecessor_id * p.n_nodes + customer_id] <=
+								p.nodes[customer_id].upper_tw &&
 							s2.routes[insert_vehicle_id].latest_time[insert_position] - p.nodes[customer_id].service_dur -
-							p.time_matrix[customer_id * p.n_nodes + successor_id] >= p.nodes[customer_id].lower_tw) {
-							if (check_schedule(p, s2, insert_vehicle_id) == true) {
-								if (check_load(p, s2, insert_vehicle_id) == true) {
+									p.time_matrix[customer_id * p.n_nodes + successor_id] >=
+								p.nodes[customer_id].lower_tw)
+						{
+							if (check_schedule(p, s2, insert_vehicle_id) == true)
+							{
+								if (check_load(p, s2, insert_vehicle_id) == true)
+								{
 
 									//update_solution(p, s2, s_recourse);
 
@@ -729,15 +769,16 @@ void swap(struct problem& p, struct solution& s1, struct solution& s2, struct so
 
 									perform_best_insertion_for_swap(p, s2, removed_customer, vehicle_id);
 
-									if (s2.possible_insertion == 1) {
+									if (s2.possible_insertion == 1)
+									{
 
-										if (s3.total_cost > s2.total_cost) {
+										if (s3.total_cost > s2.total_cost)
+										{
 											update_solution(p, s2, s3);
 											update_load(p, s3, vehicle_id);
 											update_earliest_time(p, s3, vehicle_id);
 											update_latest_time(p, s3, vehicle_id);
 											update_schedule(p, s3, vehicle_id);
-
 										}
 									}
 								}
@@ -750,10 +791,10 @@ void swap(struct problem& p, struct solution& s1, struct solution& s2, struct so
 	}
 
 	delete[] s_recourse.routes;
-
 }
 
-void remove_customer(struct problem& p, struct solution& s, int vehicle_id, int position) {
+void remove_customer(struct problem &p, struct solution &s, int vehicle_id, int position)
+{
 
 	int customer_id = s.routes[vehicle_id].route[position];
 
@@ -763,10 +804,10 @@ void remove_customer(struct problem& p, struct solution& s, int vehicle_id, int 
 	update_earliest_time(p, s, vehicle_id);
 	update_latest_time(p, s, vehicle_id);
 	update_schedule(p, s, vehicle_id);
-
 }
 
-void insert_customer(struct problem& p, struct solution& s, int customer_id, int vehicle_id, int position) {
+void insert_customer(struct problem &p, struct solution &s, int customer_id, int vehicle_id, int position)
+{
 
 	s.routes[vehicle_id].route.insert(s.routes[vehicle_id].route.begin() + position, customer_id);
 
@@ -774,10 +815,10 @@ void insert_customer(struct problem& p, struct solution& s, int customer_id, int
 	update_earliest_time(p, s, vehicle_id);
 	update_latest_time(p, s, vehicle_id);
 	update_schedule(p, s, vehicle_id);
-
 }
 
-void perform_best_insertion_for_swap(struct problem& p, struct solution& s, int customer_id, int vehicle_id) {
+void perform_best_insertion_for_swap(struct problem &p, struct solution &s, int customer_id, int vehicle_id)
+{
 
 	s.possible_insertion = 1;
 	double best_cost = DBL_MAX;
@@ -797,31 +838,39 @@ void perform_best_insertion_for_swap(struct problem& p, struct solution& s, int 
 	int count_no_insertion = 0;
 
 	/* Check all insertion positions in all vehicles */
-	for (int position = 1; position < s.routes[vehicle_id].route.size(); position++) {
+	for (int position = 1; position < s.routes[vehicle_id].route.size(); position++)
+	{
 
 		int predecessor_id = s.routes[vehicle_id].route[position - 1];
 		int successor_id = s.routes[vehicle_id].route[position];
 
-		if (check == 0) {
+		if (check == 0)
+		{
 
-			// lijst bijhouden van klanten die ingevoegd moeten worden, dit random door elkaar gooien zodat de klanten om een random manier ingevoegd worden 
+			// lijst bijhouden van klanten die ingevoegd moeten worden, dit random door elkaar gooien zodat de klanten om een random manier ingevoegd worden
 			insert_customer(p, s_try, customer_id, vehicle_id, position);
 
 			if (s_try.routes[vehicle_id].earliest_time[position - 1] + p.nodes[s_try.routes[vehicle_id].route[position - 1]].service_dur +
-				p.time_matrix[predecessor_id * p.n_nodes + customer_id] <= p.nodes[customer_id].upper_tw &&
+						p.time_matrix[predecessor_id * p.n_nodes + customer_id] <=
+					p.nodes[customer_id].upper_tw &&
 				s_try.routes[vehicle_id].latest_time[position] - p.nodes[customer_id].service_dur -
-				p.time_matrix[customer_id * p.n_nodes + successor_id] >= p.nodes[s_try.routes[vehicle_id].route[position + 1]].lower_tw) {
-				if (check_schedule(p, s_try, vehicle_id) == true) {
-					if (check_load(p, s_try, vehicle_id) == true) {
+						p.time_matrix[customer_id * p.n_nodes + successor_id] >=
+					p.nodes[s_try.routes[vehicle_id].route[position + 1]].lower_tw)
+			{
+				if (check_schedule(p, s_try, vehicle_id) == true)
+				{
+					if (check_load(p, s_try, vehicle_id) == true)
+					{
 
 						//update_solution(p, s_try, s_recourse);
 
 						bereken_gewogen_route_cost(p, s_try, s_recourse, vehicle_id);
 						calculate_total_cost(p, s_try);
 
-						//cout << "inserted customer " << customer_id << " vehicle " << vehicle_id << " position " << position << " cost " << s_try.total_cost <<  "\n"; 
+						//cout << "inserted customer " << customer_id << " vehicle " << vehicle_id << " position " << position << " cost " << s_try.total_cost <<  "\n";
 
-						if (s_try.total_cost < best_cost) {
+						if (s_try.total_cost < best_cost)
+						{
 
 							best_cost = s_try.total_cost;
 							//best_vehicle_id = vehicle_id;
@@ -831,10 +880,10 @@ void perform_best_insertion_for_swap(struct problem& p, struct solution& s, int 
 							//cout << "(best) vehicle id (1) " << vehicle_id << "\n";
 
 							//cout << "klant " << customer_id << " position " << best_position << " cost " << best_cost << "\n";
-
 						}
 					}
-					else {
+					else
+					{
 						count_no_insertion++;
 						//cout << "count no insertion " << count_no_insertion << "\n";
 					}
@@ -845,19 +894,22 @@ void perform_best_insertion_for_swap(struct problem& p, struct solution& s, int 
 			bereken_gewogen_route_cost(p, s_try, s_recourse, vehicle_id);
 		}
 
-		if (s.routes[vehicle_id].route.size() == 2) {
+		if (s.routes[vehicle_id].route.size() == 2)
+		{
 			check = 1;
 		}
 
 		/*cout << "removed customer " << customer_id << " vehicle " << vehicle_id << " position " << position << " cost " << s_try.total_cost << "\n"; */
 	}
 
-	if (s_try.routes[vehicle_id].route.size() - 1 == count_no_insertion || best_position == -1) {
+	if (s_try.routes[vehicle_id].route.size() - 1 == count_no_insertion || best_position == -1)
+	{
 		//cout << "no insertion possible \n";
 		s.possible_insertion = 0;
 	}
 
-	else { // hier klant invoegen op beste positie 
+	else
+	{ // hier klant invoegen op beste positie
 
 		insert_customer(p, s, customer_id, vehicle_id, best_position);
 
@@ -879,7 +931,6 @@ void perform_best_insertion_for_swap(struct problem& p, struct solution& s, int 
 		//}
 
 		//cout << "\n";
-
 	}
 
 	//cout << "best customer " << customer_id << " vehicle " << best_vehicle_id << " position " << best_position << " cost " << best_cost << "\n";
@@ -887,7 +938,8 @@ void perform_best_insertion_for_swap(struct problem& p, struct solution& s, int 
 	delete[] s_recourse.routes;
 }
 
-void perform_best_insertion(struct problem& p, struct solution& s, int customer_id) {
+void perform_best_insertion(struct problem &p, struct solution &s, int customer_id)
+{
 
 	//cout << "Customer id perform best insertion " << customer_id << "\n";
 
@@ -904,35 +956,44 @@ void perform_best_insertion(struct problem& p, struct solution& s, int customer_
 	initialize_solution(p, s_recourse);
 
 	/* Check all insertion positions in all vehicles */
-	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
-		for (int position = 1; position < s.routes[vehicle_id].route.size(); position++) {
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+	{
+		for (int position = 1; position < s.routes[vehicle_id].route.size(); position++)
+		{
 
 			int predecessor_id = s.routes[vehicle_id].route[position - 1];
 			int successor_id = s.routes[vehicle_id].route[position];
 
 			//cout << "vehicle id " << vehicle_id << "\n";
 
-			if (check == 0) {
+			if (check == 0)
+			{
 
-				// lijst bijhouden van klanten die ingevoegd moeten worden, dit random door elkaar gooien zodat de klanten om een random manier ingevoegd worden 
+				// lijst bijhouden van klanten die ingevoegd moeten worden, dit random door elkaar gooien zodat de klanten om een random manier ingevoegd worden
 				insert_customer(p, s_try, customer_id, vehicle_id, position);
 
 				if (s_try.routes[vehicle_id].earliest_time[position - 1] + p.nodes[s_try.routes[vehicle_id].route[position - 1]].service_dur +
-					p.time_matrix[predecessor_id * p.n_nodes + customer_id] <= p.nodes[customer_id].upper_tw &&
+							p.time_matrix[predecessor_id * p.n_nodes + customer_id] <=
+						p.nodes[customer_id].upper_tw &&
 					s_try.routes[vehicle_id].latest_time[position] - p.nodes[customer_id].service_dur -
-					p.time_matrix[customer_id * p.n_nodes + successor_id] >= p.nodes[s_try.routes[vehicle_id].route[position + 1]].lower_tw) {
-					if (check_schedule(p, s_try, vehicle_id) == true) {
-						if (check_load(p, s_try, vehicle_id) == true) {
+							p.time_matrix[customer_id * p.n_nodes + successor_id] >=
+						p.nodes[s_try.routes[vehicle_id].route[position + 1]].lower_tw)
+				{
+					if (check_schedule(p, s_try, vehicle_id) == true)
+					{
+						if (check_load(p, s_try, vehicle_id) == true)
+						{
 
 							//update_solution(p, s_try, s_recourse);
 
 							bereken_gewogen_route_cost(p, s_try, s_recourse, vehicle_id);
 							calculate_total_cost(p, s_try);
 
-							//cout << "inserted customer " << customer_id << " vehicle " << vehicle_id << " position " << position << " cost " << s_try.total_cost <<  "\n"; 
+							//cout << "inserted customer " << customer_id << " vehicle " << vehicle_id << " position " << position << " cost " << s_try.total_cost <<  "\n";
 
 							//cout << "stry total cost " << s_try.total_cost << " best cost " << best_cost << "\n";
-							if (s_try.total_cost < best_cost) {
+							if (s_try.total_cost < best_cost)
+							{
 
 								best_cost = s_try.total_cost;
 								best_vehicle_id = vehicle_id;
@@ -941,8 +1002,7 @@ void perform_best_insertion(struct problem& p, struct solution& s, int customer_
 								//cout << "best position (1) " << best_position << "\n";
 								//cout << "best vehicle id (1) " << best_vehicle_id << "\n";
 
-								//cout << "klant " << customer_id << " vehicle " << best_vehicle_id << " position " << best_position << " cost " << best_cost << "\n"; 
-
+								//cout << "klant " << customer_id << " vehicle " << best_vehicle_id << " position " << best_position << " cost " << best_cost << "\n";
 							}
 						}
 					}
@@ -952,12 +1012,12 @@ void perform_best_insertion(struct problem& p, struct solution& s, int customer_
 				bereken_gewogen_route_cost(p, s_try, s_recourse, vehicle_id);
 			}
 
-			if (s.routes[vehicle_id].route.size() == 2) {
+			if (s.routes[vehicle_id].route.size() == 2)
+			{
 				check = 1;
 			}
 
 			/*cout << "removed customer " << customer_id << " vehicle " << vehicle_id << " position " << position << " cost " << s_try.total_cost << "\n"; */
-
 		}
 	}
 	//cout << "best position (2) " << best_position << "\n";
@@ -972,10 +1032,10 @@ void perform_best_insertion(struct problem& p, struct solution& s, int customer_
 	//cout << "best customer " << customer_id << " vehicle " << best_vehicle_id << " position " << best_position << " cost " << best_cost << "\n";
 
 	delete[] s_try.routes;
-
 }
 
-vector<double> probability_of_failure(problem& p, solution& s, int vehicle_id) { // this function requires the size of a route as input 
+vector<double> probability_of_failure(problem &p, solution &s, int vehicle_id)
+{ // this function requires the size of a route as input
 
 	//TODO Improve this function AKA.
 	//- Less functional call (reduce switching time)
@@ -991,14 +1051,16 @@ vector<double> probability_of_failure(problem& p, solution& s, int vehicle_id) {
 	//cout << "\n";
 
 	// Initialise with 0 for depot point.
-	vector<double> failure{ 0.0 }; // the different probabilities are put in a vector
+	vector<double> failure{0.0}; // the different probabilities are put in a vector
 
-	if (s.routes[vehicle_id].route.size() == 2) {
+	if (s.routes[vehicle_id].route.size() == 2)
+	{
 
 		failure.push_back(0.0);
 	}
 
-	else {
+	else
+	{
 
 		vector<double>::iterator iter = failure.begin();
 		// Should be equal to the number of clients in the current route.
@@ -1006,7 +1068,7 @@ vector<double> probability_of_failure(problem& p, solution& s, int vehicle_id) {
 
 		//cout << "vehicle " << vehicle_id << "\n";
 
-		for (int i = 1; i < s.routes[vehicle_id].route.size() - 1; i++) // hier wordt wel geen rekening gehouden met de veronderstelling dat er geen failure mogelijk is bij de eerste klant in de route 
+		for (int i = 1; i < s.routes[vehicle_id].route.size() - 1; i++) // hier wordt wel geen rekening gehouden met de veronderstelling dat er geen failure mogelijk is bij de eerste klant in de route
 		{
 
 			customersIDs.push_back(std::to_string(p.nodes[s.routes[vehicle_id].route[i]].order_nr));
@@ -1030,10 +1092,13 @@ vector<double> probability_of_failure(problem& p, solution& s, int vehicle_id) {
 	return failure;
 }
 
-bool check_load(struct problem& p, struct solution& s, int vehicle_id) {
+bool check_load(struct problem &p, struct solution &s, int vehicle_id)
+{
 
-	for (int position = 0; position < s.routes[vehicle_id].route.size(); position++) {
-		if (s.routes[vehicle_id].load[position] > p.vehicle_cap) {
+	for (int position = 0; position < s.routes[vehicle_id].route.size(); position++)
+	{
+		if (s.routes[vehicle_id].load[position] > p.vehicle_cap)
+		{
 			return false;
 		};
 	}
@@ -1041,11 +1106,14 @@ bool check_load(struct problem& p, struct solution& s, int vehicle_id) {
 	return true;
 }
 
-bool check_schedule(struct problem& p, struct solution& s, int vehicle_id) {
+bool check_schedule(struct problem &p, struct solution &s, int vehicle_id)
+{
 
-	for (int position = 0; position < s.routes[vehicle_id].route.size(); position++) {
+	for (int position = 0; position < s.routes[vehicle_id].route.size(); position++)
+	{
 		if (s.routes[vehicle_id].schedule[position] > p.nodes[s.routes[vehicle_id].route[position]].upper_tw + 0.0001 ||
-			s.routes[vehicle_id].schedule[position] < p.nodes[s.routes[vehicle_id].route[position]].lower_tw - 0.0001) {
+			s.routes[vehicle_id].schedule[position] < p.nodes[s.routes[vehicle_id].route[position]].lower_tw - 0.0001)
+		{
 			return false;
 		};
 	}
@@ -1053,99 +1121,115 @@ bool check_schedule(struct problem& p, struct solution& s, int vehicle_id) {
 	return true;
 }
 
-void update_load(struct problem& p, struct solution& s, int vehicle_id) {
+void update_load(struct problem &p, struct solution &s, int vehicle_id)
+{
 
 	s.routes[vehicle_id].load.resize(s.routes[vehicle_id].route.size());
 
 	s.routes[vehicle_id].load[0] = 0;
 
-	for (int position = 1; position < s.routes[vehicle_id].route.size(); position++) {
+	for (int position = 1; position < s.routes[vehicle_id].route.size(); position++)
+	{
 		s.routes[vehicle_id].load[position] = s.routes[vehicle_id].load[position - 1] + p.nodes[s.routes[vehicle_id].route[position]].demand;
 	}
-
 }
 
-void update_schedule(struct problem& p, struct solution& s, int vehicle_id) {
+void update_schedule(struct problem &p, struct solution &s, int vehicle_id)
+{
 
 	s.routes[vehicle_id].schedule.resize(s.routes[vehicle_id].route.size());
 
-	s.routes[vehicle_id].schedule[s.routes[vehicle_id].route.size() - 1] = s.routes[vehicle_id].earliest_time[s.routes[vehicle_id].route.size() - 1]; // hier vanaf vanachter beginnen tellen 
+	s.routes[vehicle_id].schedule[s.routes[vehicle_id].route.size() - 1] = s.routes[vehicle_id].earliest_time[s.routes[vehicle_id].route.size() - 1]; // hier vanaf vanachter beginnen tellen
 
 	//cout << "schedule " << s.routes[vehicle_id].schedule[s.routes[vehicle_id].route.size() - 1] << "\n";
 
-	for (int position = s.routes[vehicle_id].route.size() - 2; position >= 0; position--) {
+	for (int position = s.routes[vehicle_id].route.size() - 2; position >= 0; position--)
+	{
 		s.routes[vehicle_id].schedule[position] = s.routes[vehicle_id].schedule[position + 1] - p.nodes[s.routes[vehicle_id].route[position]].service_dur -
-			p.time_matrix[s.routes[vehicle_id].route[position] * p.n_nodes + s.routes[vehicle_id].route[position + 1]];
-		if (s.routes[vehicle_id].schedule[position] > p.nodes[s.routes[vehicle_id].route[position]].upper_tw) {
+												  p.time_matrix[s.routes[vehicle_id].route[position] * p.n_nodes + s.routes[vehicle_id].route[position + 1]];
+		if (s.routes[vehicle_id].schedule[position] > p.nodes[s.routes[vehicle_id].route[position]].upper_tw)
+		{
 			s.routes[vehicle_id].schedule[position] = p.nodes[s.routes[vehicle_id].route[position]].upper_tw;
 		}
 	}
 }
 
-void update_earliest_time(struct problem& p, struct solution& s, int vehicle_id) {
+void update_earliest_time(struct problem &p, struct solution &s, int vehicle_id)
+{
 
 	s.routes[vehicle_id].earliest_time.resize(s.routes[vehicle_id].route.size());
 
 	s.routes[vehicle_id].earliest_time[0] = p.nodes[0].lower_tw;
 
-	for (int position = 1; position < s.routes[vehicle_id].route.size(); position++) {
+	for (int position = 1; position < s.routes[vehicle_id].route.size(); position++)
+	{
 		s.routes[vehicle_id].earliest_time[position] = s.routes[vehicle_id].earliest_time[position - 1] + p.nodes[s.routes[vehicle_id].route[position - 1]].service_dur +
-			p.time_matrix[s.routes[vehicle_id].route[position - 1] * p.n_nodes + s.routes[vehicle_id].route[position]];
-		if (s.routes[vehicle_id].earliest_time[position] < p.nodes[s.routes[vehicle_id].route[position]].lower_tw) {
+													   p.time_matrix[s.routes[vehicle_id].route[position - 1] * p.n_nodes + s.routes[vehicle_id].route[position]];
+		if (s.routes[vehicle_id].earliest_time[position] < p.nodes[s.routes[vehicle_id].route[position]].lower_tw)
+		{
 			s.routes[vehicle_id].earliest_time[position] = p.nodes[s.routes[vehicle_id].route[position]].lower_tw;
 		}
 	}
 }
 
-void update_latest_time(struct problem& p, struct solution& s, int vehicle_id) {
+void update_latest_time(struct problem &p, struct solution &s, int vehicle_id)
+{
 
 	s.routes[vehicle_id].latest_time.resize(s.routes[vehicle_id].route.size());
 
-	s.routes[vehicle_id].latest_time[s.routes[vehicle_id].route.size() - 1] = p.nodes[0].upper_tw;// hier vanaf vanachter beginnen tellen
+	s.routes[vehicle_id].latest_time[s.routes[vehicle_id].route.size() - 1] = p.nodes[0].upper_tw; // hier vanaf vanachter beginnen tellen
 
-	for (int position = s.routes[vehicle_id].route.size() - 2; position >= 0; position--) {
+	for (int position = s.routes[vehicle_id].route.size() - 2; position >= 0; position--)
+	{
 		s.routes[vehicle_id].latest_time[position] = s.routes[vehicle_id].latest_time[position + 1] - p.nodes[s.routes[vehicle_id].route[position]].service_dur -
-			p.time_matrix[s.routes[vehicle_id].route[position] * p.n_nodes + s.routes[vehicle_id].route[position + 1]];
-		if (s.routes[vehicle_id].latest_time[position] > p.nodes[s.routes[vehicle_id].route[position]].upper_tw) {
+													 p.time_matrix[s.routes[vehicle_id].route[position] * p.n_nodes + s.routes[vehicle_id].route[position + 1]];
+		if (s.routes[vehicle_id].latest_time[position] > p.nodes[s.routes[vehicle_id].route[position]].upper_tw)
+		{
 			s.routes[vehicle_id].latest_time[position] = p.nodes[s.routes[vehicle_id].route[position]].upper_tw;
 		}
 	}
-
 }
 
-void write_output_file(struct problem& p, struct solution& s) { // nog toevoegen over welk scenario (experiment) het gaat
+void write_output_file(struct problem &p, struct solution &s)
+{ // nog toevoegen over welk scenario (experiment) het gaat
 
 	ofstream output_file;
 
 	// toevoegen: totale kost vlak voor perturbatie
 
-	output_file.open(("Results " + data_file + " day " + p.collection_date +  ".txt"), std::ios_base::app);
+	output_file.open(("Results " + data_file + " day " + p.collection_date + ".txt"), std::ios_base::app);
 
-	output_file << "Data file: " << data_file << endl << " Day " << p.collection_date << " TW violation " <<  time_window_violation_cost << " operating time " << allowable_operating_time_cost << endl 
-		<< "Vehicles: " << s.number_of_vehicles_used << " Distance: " << s.total_distance_cost
-		<< " Route Duration: " << s.total_route_duration << " time window violation " << s.total_time_window_violation <<
-		" overtime " << s.total_overtime << " allowable operating time " << s.total_driving_time << " Total Cost: " << s.total_cost << "\n";
+	output_file << "Data file: " << data_file << endl
+				<< " Day " << p.collection_date << " TW violation " << time_window_violation_cost << " operating time " << allowable_operating_time_cost << endl
+				<< "Vehicles: " << s.number_of_vehicles_used << " Distance: " << s.total_distance_cost
+				<< " Route Duration: " << s.total_route_duration << " time window violation " << s.total_time_window_violation << " overtime " << s.total_overtime << " allowable operating time " << s.total_driving_time << " Total Cost: " << s.total_cost << "\n";
 
-	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+	{
 
-		output_file << endl << "- route " << vehicle_id << ": ";
-		for (int position = 0; position < s.routes[vehicle_id].route.size(); position++) {
+		output_file << endl
+					<< "- route " << vehicle_id << ": ";
+		for (int position = 0; position < s.routes[vehicle_id].route.size(); position++)
+		{
 			output_file << s.routes[vehicle_id].route[position] << " ";
 		}
 		output_file;
 	}
 
-	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+	{
 
-		output_file << endl << "s_curr.routes[" << vehicle_id << "].route = { ";
-		for (int position = 0; position < s.routes[vehicle_id].route.size() - 1; position++) {
+		output_file << endl
+					<< "s_curr.routes[" << vehicle_id << "].route = { ";
+		for (int position = 0; position < s.routes[vehicle_id].route.size() - 1; position++)
+		{
 			output_file << s.routes[vehicle_id].route[position] << ", ";
 		}
 		output_file << s.routes[vehicle_id].route[0] << " }";
 	}
 
-
-	output_file << endl << endl;
+	output_file << endl
+				<< endl;
 	output_file.close();
 }
 
