@@ -6,7 +6,7 @@
 #include <time.h>
 #include <ctime>
 #include <chrono>
-#include <algorithm> // std::find
+#include <algorithm>
 
 #include "ProbabilityEstimator.h"
 #include "Heuristic.h"
@@ -23,15 +23,20 @@ void show(vector<int> const &input)
 	cout << "\n";
 }
 
-int value_no_improvement = 2;
+string data_file = "General_Cargo_LTL_2018_v10072019_input_code adjusted tw.txt";
+string coordinates_file = "distance_matrix 2 jan.txt";
+
+double time_window_violation_cost = 10;
+double allowable_operating_time_cost = 1000;
 
 /* Main function to run the algorithm */
 int main(int argc, char *argv[])
 {
 
-	srand(time(NULL));
+	double perturbation_percentage = 0.2;
+	int value_no_improvement = 2;
 
-	auto start = chrono::system_clock::now();
+	srand(time(NULL));
 	/*
 	===============================================
 	The beginning of the code
@@ -44,9 +49,24 @@ int main(int argc, char *argv[])
 	- Set some holder variables for (current/previous/local_best/ILS(iterated local search)) solutions
 	*/
 	struct problem p;
-	p.collection_date = "2-Jan-2018"; // set a collection date
+
+	p.collection_date = "2-Jan-2018";
+
+	//if (argc > 1) {
+
+	//	time_window_violation_cost = atof(argv[1]);
+	//	allowable_operating_time_cost = atof(argv[2]);
+	//}
+
+	//if (argc > 1) {
+	//	perturbation_percentage = atoi(argv[1]);
+	//	value_no_improvement = atoi(argv[2]);
+
+	//}
+
 	read_data(p);
 	read_distance_and_time_matrix(p);
+
 	p.pe.readDistributions(p.collection_date); // read probabilities of 'p.collection_date'
 
 	struct solution s_curr;
@@ -70,25 +90,24 @@ int main(int argc, char *argv[])
 	*/
 	// Code to randomly insert customers at their best-initial-position (e.g. distance based)
 	//FIXME: This code block might be not needed (just making a vector of 1 to n_customers)
+
 	vector<int> customers_to_be_inserted = {};
+
 	for (int customer_id = 1; customer_id <= p.n_customers; customer_id++)
 	{
+
 		customers_to_be_inserted.push_back(customer_id);
 	}
 
 	//cout << "customers to be inserted " << customers_to_be_inserted.size() << "\n";
-	//REFACTOR: (combine from 1 to n_customers together with this block, together with the next block. )
+
 	for (int i = 0; i < customers_to_be_inserted.size() - 1; i++)
 	{
 		int j = i + rand() % (customers_to_be_inserted.size() - i);
-		//This is the built-in SWAP from c++ (to swap references) and not ILS operator.
 		swap(customers_to_be_inserted[i], customers_to_be_inserted[j]);
 	}
 
-	// Print the vector after refrences has been updated.
 	show(customers_to_be_inserted);
-
-
 	//TODO: Refactor the initial solution code (this block and perform_best_insertion())
 	//FIXME: The block of generating a vector + randomly shuffling + this block,,, are all to do one thing (SORT based on distance (which is done inside the perform_best_insertion))
 	for (int customer_id = 0; customer_id <= customers_to_be_inserted.size() - 1; customer_id++)
@@ -101,7 +120,8 @@ int main(int argc, char *argv[])
 	update_solution(p, s_curr, s_local_best);
 
 	cout << "Initial solution with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-		 << " route duration " << s_local_best.total_route_duration << " total cost " << s_local_best.total_cost << "\n";
+		 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
+
 	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 	{
 		for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
@@ -111,7 +131,7 @@ int main(int argc, char *argv[])
 
 		cout << "\n";
 	}
-	// Update the other holder variables with the (current) local best.
+
 	update_solution(p, s_local_best, s_total_best);
 	update_solution(p, s_local_best, s_ILS_best);
 	cout << "total best " << s_total_best.total_cost << "\n";
@@ -133,19 +153,18 @@ int main(int argc, char *argv[])
 	- The relocate flow stops when there is no more improvments (note: current setup is considering only one relocation at a time)
 	*/
 	// Store the best solution as the previous best.
+
 	update_solution(p, s_local_best, s_prev);
-	//First relocate
 	relocate(p, s_prev, s_curr, s_local_best);
 
 	// while loop uitvoeren op RELOCATE totdat er geen verbeteringen meer zijn
 	while (s_local_best.total_cost < s_prev.total_cost)
-	{ 
+	{ // while loop uitvoeren op RELOCATE totdat er geen verbeteringen meer zijn
 		update_solution(p, s_local_best, s_prev);
 		relocate(p, s_prev, s_curr, s_local_best);
-
 		//TODO: Optimise all prints in a function or store them in files.
 		cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-			 << " route duration " << s_local_best.total_route_duration << " total cost " << s_local_best.total_cost << "\n";
+			 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
 		for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 		{
 			for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
@@ -157,7 +176,7 @@ int main(int argc, char *argv[])
 
 		cout << "best cost na relocate " << s_local_best.total_cost << "\n";
 	}
-	
+
 	//Update holder variables with the new results.
 	if (s_local_best.total_cost < s_total_best.total_cost)
 	{
@@ -167,36 +186,17 @@ int main(int argc, char *argv[])
 		cout << "total best " << s_total_best.total_cost << "\n";
 		//cout << "ILS best " << s_ILS_best.total_cost << "\n";
 	}
-	/*
-	-----------------------
-	END: Relocate flow
-	-----------------------
-	*/
 
-	/*
-	-----------------------
-	START: SWAP flow
-	-----------------------
-	- Swap two customers from different routes.
-		Differences with relocate:
-			- Never in the same routes.
-			- Current Route length is never change in swap whereas in relocate it does remove from one route and insert in another route (changing the length of both routes).
-	- The swap happens for all routes, for all clients (see inside swap()). 
-	- The swap flow stops when there is no more improvments (note: current setup is considering only one relocation at a time)
-	*/
-	// Store the best solution as the previous best.
 	update_solution(p, s_local_best, s_prev);
-	//First SWAP
 	swap(p, s_prev, s_curr, s_local_best);
-
 	// while loop uitvoeren op SWAP totdat er geen verbeteringen meer zijn
 	while (s_local_best.total_cost < s_prev.total_cost)
-	{ 
+	{ // while loop uitvoeren op SWAP totdat er geen verbeteringen meer zijn
 		update_solution(p, s_local_best, s_prev);
 		swap(p, s_prev, s_curr, s_local_best);
 
 		cout << "\nNew best solution after swap with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-			 << " route duration " << s_local_best.total_route_duration << " total cost " << s_local_best.total_cost << "\n";
+			 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
 		for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 		{
 			for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
@@ -209,7 +209,6 @@ int main(int argc, char *argv[])
 
 		cout << "best cost na swap " << s_local_best.total_cost << "\n";
 	}
-
 	//Update holder variables with the new results.
 	if (s_local_best.total_cost < s_total_best.total_cost)
 	{
@@ -219,21 +218,29 @@ int main(int argc, char *argv[])
 		cout << "total best " << s_total_best.total_cost << "\n";
 		cout << "ILS best " << s_ILS_best.total_cost << "\n";
 	}
-	/*
-	-----------------------
-	END: SWAP flow
-	-----------------------
-	*/
-
-	/*
-	-----------------------
-	START: Relocate flow for the second time
-	-----------------------
-	*/
 
 	update_solution(p, s_local_best, s_prev);
 	relocate(p, s_prev, s_curr, s_local_best);
 
+	cout << "\nNew best solution after first relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
+		 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+	{
+		for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
+		{
+			cout << s_local_best.routes[vehicle_id].route[position] << " ";
+		}
+		cout << "\n";
+	}
+
+	cout << "best cost na first relocate " << s_local_best.total_cost << "\n";
+
+	if (s_local_best.total_cost < s_total_best.total_cost)
+	{
+		update_solution(p, s_local_best, s_total_best);
+
+		cout << "total best " << s_total_best.total_cost << "\n";
+	}
 
 	while (s_local_best.total_cost < s_prev.total_cost)
 	{ // while loop op RELOCATE uitvoeren totdat er geen verbeteringen meer zijn
@@ -242,7 +249,7 @@ int main(int argc, char *argv[])
 		relocate(p, s_prev, s_curr, s_local_best);
 
 		cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-			 << " route duration " << s_local_best.total_route_duration << " total cost " << s_local_best.total_cost << "\n";
+			 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
 		for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 		{
 			for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
@@ -289,28 +296,17 @@ int main(int argc, char *argv[])
 	//for (int iteration = 0; iteration < iterations; iteration++) {
 	while (number_of_times_without_improvement < value_no_improvement)
 	{
-		//FIXME: Are you sure of this?!!!
-		//Note: it works but it is WRONG. It works because in the next block the random remove is happening anyway, which will result in a new route.
-		// This line is not doing anything anyway.... This code is dangrous and not obvious.....
+
 		update_solution(p, s_total_best, s_local_best);
 
-		/*
-		-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*--*-*-*-
-		START: Randomly remove a percentage of customer 		
-		//FIXME: THIS CODE SMELLS.......
-		-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*--*-*-*-
-		//TODO: Think about an optimisation procedure for this.
-		*/
 		vector<int> random_customers = {};
 
-		while (random_customers.size() < 0.3 * p.n_customers)
+		while (random_customers.size() < perturbation_percentage * p.n_customers)
 		{
-			// Choose a random customer
+
 			int customer = rand() % p.n_customers + 1;
 
-			vector<int>::iterator it;
-			//Find that customer (with this id) and push it in the random_customers
-			it = find(random_customers.begin(), random_customers.end(), customer);
+			std::vector<int>::iterator it = find(random_customers.begin(), random_customers.end(), customer);
 			if (it == random_customers.end())
 			{
 				//cout << "curr " << j_curr << "\n";
@@ -325,15 +321,13 @@ int main(int argc, char *argv[])
 		}
 
 		cout << "\n";
-		// Find the route and the position of the customer to be removed
+
 		s_local_best.route_customer = {};
 		s_local_best.position_customer = {};
 
 		for (size_t i = 0; i < random_customers.size(); i++)
 		{
-			//FIXME: This function position_removed_customers() is wrong and only works because the solution is being updated inside the function. 
 			position_removed_customers(p, s_local_best, random_customers[i]);
-			// Remove this customer based on vehicle_id and position.
 			remove_customer(p, s_local_best, s_local_best.route_customer[i], s_local_best.position_customer[i]);
 		}
 
@@ -368,7 +362,7 @@ int main(int argc, char *argv[])
 		}
 
 		cout << "New initial solution after perturbation with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-			 << " route duration " << s_local_best.total_route_duration << " total cost " << s_local_best.total_cost << "\n";
+			 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
 		for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 		{
 			for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
@@ -380,6 +374,8 @@ int main(int argc, char *argv[])
 		}
 
 		cout << "\n";
+
+		//write_output_file_perturbation(p, s_local_best);
 
 		if (s_local_best.total_cost < s_total_best.total_cost)
 		{
@@ -401,6 +397,23 @@ int main(int argc, char *argv[])
 		update_solution(p, s_local_best, s_prev);
 		relocate(p, s_prev, s_curr, s_local_best);
 
+		//cout << "\nNew best solution after first relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
+		//	<< " route duration " << s_local_best.total_route_duration << " total cost " << s_local_best.total_cost << "\n";
+		//for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+		//	for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++) {
+		//		cout << s_local_best.routes[vehicle_id].route[position] << " ";
+		//	}
+		//	cout << "\n";
+		//}
+
+		//cout << "best cost na first relocate " << s_local_best.total_cost << "\n";
+
+		//if (s_local_best.total_cost < s_total_best.total_cost) {
+		//	update_solution(p, s_local_best, s_total_best);
+
+		//	cout << "total best " << s_total_best.total_cost << "\n";
+		//}
+
 		while (s_local_best.total_cost < s_prev.total_cost)
 		{ // while loop uitvoeren totdat er geen verbeteringen meer zijn
 
@@ -408,7 +421,7 @@ int main(int argc, char *argv[])
 			relocate(p, s_prev, s_curr, s_local_best);
 
 			cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-				 << " route duration " << s_local_best.total_route_duration << " total cost " << s_local_best.total_cost << "\n";
+				 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
 			for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 			{
 				for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
@@ -436,7 +449,6 @@ int main(int argc, char *argv[])
 			cout << "ILS best " << s_ILS_best.total_cost << "\n";
 		}
 
-	
 		update_solution(p, s_local_best, s_prev);
 		swap(p, s_prev, s_curr, s_local_best);
 
@@ -446,7 +458,7 @@ int main(int argc, char *argv[])
 			swap(p, s_prev, s_curr, s_local_best);
 
 			cout << "\nNew best solution after swap with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-				 << " route duration " << s_local_best.total_route_duration << " total cost " << s_local_best.total_cost << "\n";
+				 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
 			for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 			{
 				for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
@@ -474,10 +486,25 @@ int main(int argc, char *argv[])
 			cout << "ILS best " << s_ILS_best.total_cost << "\n";
 		}
 
-
 		update_solution(p, s_local_best, s_prev);
 		relocate(p, s_prev, s_curr, s_local_best);
 
+		//cout << "\nNew best solution after first relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
+		//	<< " route duration " << s_local_best.total_route_duration << " total cost " << s_local_best.total_cost << "\n";
+		//for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+		//	for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++) {
+		//		cout << s_local_best.routes[vehicle_id].route[position] << " ";
+		//	}
+		//	cout << "\n";
+		//}
+
+		//cout << "best cost na first relocate " << s_local_best.total_cost << "\n";
+
+		//if (s_local_best.total_cost < s_total_best.total_cost) {
+		//	update_solution(p, s_local_best, s_total_best);
+
+		//	cout << "total best " << s_total_best.total_cost << "\n";
+		//}
 
 		while (s_local_best.total_cost < s_prev.total_cost)
 		{ // while loop uitvoeren totdat er geen verbeteringen meer zijn
@@ -486,7 +513,7 @@ int main(int argc, char *argv[])
 			relocate(p, s_prev, s_curr, s_local_best);
 
 			cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-				 << " route duration " << s_local_best.total_route_duration << " total cost " << s_local_best.total_cost << "\n";
+				 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
 			for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 			{
 				for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
@@ -512,7 +539,6 @@ int main(int argc, char *argv[])
 
 			cout << "total best " << s_total_best.total_cost << "\n";
 		}
-
 		/* 
 		FIXME: The problem with the current code of the if-else block is related to the Code-Smell of the Remove Percentage Customers.
 		 The code might be working, but it is wrong.
@@ -532,14 +558,6 @@ int main(int argc, char *argv[])
 
 			cout << "number of times without improvement " << number_of_times_without_improvement << "\n";
 		}
-
-		auto end = std::chrono::system_clock::now();
-
-		std::chrono::duration<double> elapsed_seconds = end - start;
-		std::time_t end_time = std::chrono::system_clock::to_time_t(end);
-
-		//cout << "finished computation at " << ctime(&end_time) << "\n";
-		//cout << "elapsed time: " << elapsed_seconds.count() << "s\n";
 
 		write_output_file(p, s_ILS_best);
 	}

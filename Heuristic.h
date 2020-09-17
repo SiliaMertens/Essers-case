@@ -10,8 +10,8 @@ const double fixed_vehicle_cost = 102.24;
 const double km_cost = 0.5834;
 const int driver_cost = 25;
 const double overtime_cost = 2.78;
-const double time_window_violation_cost = 1;
-const double allowable_operating_time_cost = 1;
+extern double time_window_violation_cost;
+extern double allowable_operating_time_cost;
 
 class ProbabilityEstimator; // forward declaration
 
@@ -94,6 +94,7 @@ struct solution {
 	bool possible_insertion;
 };
 
+
 /* Preprocessing functions */
 void read_data(problem& p);
 void read_distance_and_time_matrix(struct problem& p);
@@ -135,6 +136,6 @@ std::vector<double> probability_of_failure(problem& p, solution& s, int vehicle_
 
 /* Output */
 void write_output_file(problem& p, solution& s);
-void represent_solution(problem& p, solution& s);
+void write_output_file_perturbation(problem& p, solution& s);
 
 #endif
