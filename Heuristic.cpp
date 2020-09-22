@@ -584,6 +584,11 @@ void relocate(struct problem &p, struct solution &s_prev, struct solution &s_cur
 
 	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 	{ // over alle routes loopen
+        if (s_prev.routes[vehicle_id].route.size() <= 3) {
+            // '0 0' or '0 x 0': no relocate necessary
+            continue;
+        }
+            
 		for (int position = 1; position < s_prev.routes[vehicle_id].route.size() - 1; position++)
 		{ // over alle klantposities loopen
 			/*cout << "vehicle " << vehicle_id << " prev route size " << s_prev.routes[vehicle_id].route.size() << "\n";*/
