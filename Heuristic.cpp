@@ -295,7 +295,7 @@ void change_update_solution_vehicle(solution &s1, solution &s2, int vehicle1, in
 	s1.routes[vehicle2].departure_time = s2.routes[vehicle1].departure_time;
 }
 
-vector<int> position_removed_customers(problem &p, solution &s, int customer_id)
+void position_removed_customers(problem &p, solution &s, int customer_id)
 {
 	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 	{

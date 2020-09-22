@@ -235,6 +235,16 @@ int main(int argc, char *argv[])
 		cout << "total best " << s_total_best.total_cost << "\n";
 		cout << "ILS best " << s_ILS_best.total_cost << "\n";
 	}
+	/*
+	-----------------------
+	END: SWAP flow
+	-----------------------
+	*/
+	/*
+	-----------------------
+	Start: Second Relocate flow
+	-----------------------
+	*/
 
 	update_solution(p, s_local_best, s_prev);
 	relocate(p, s_prev, s_curr, s_local_best);
