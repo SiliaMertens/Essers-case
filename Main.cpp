@@ -586,6 +586,7 @@ int main(int argc, char *argv[])
 			cout << "number of times without improvement " << number_of_times_without_improvement << "\n";
 		}
 
+		cout << "final ILS best " << s_ILS_best.total_cost << "\n";
 		write_output_file(p, s_ILS_best);
 	}
 }
