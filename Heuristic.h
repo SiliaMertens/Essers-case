@@ -100,9 +100,10 @@ void read_distance_and_time_matrix(struct problem &p);
 /* Solution management functions */
 void initialize_solution(problem &p, solution &s);
 void update_solution(problem &p, solution &s1, solution &s2);
-void change_update_solution_1(problem &p, solution &s1, solution &s2, int vehicle1);
-void change_update_solution_2(problem &p, solution &s1, int vehicle1, int vehicle2);
-void change_update_solution_3(problem &p, solution &s1, solution &s2, int vehicle1, int vehicle2);
+// void change_update_solution_1(problem &p, solution &s1, solution &s2, int vehicle1);
+// void change_update_solution_2(problem &p, solution &s1, int vehicle1, int vehicle2);
+// void change_update_solution_3(problem &p, solution &s1, solution &s2, int vehicle1, int vehicle2);
+void change_update_solution_vehicle(solution &s1, solution &s2, int vehicle1, int vehicle2);
 std::vector<int> position_removed_customers(problem &p, solution &s, int customer_id);
 void bereken_route_cost_zonder_recourse(problem &p, solution &s, int vehicle_id);
 void bereken_route_cost(problem &p, solution &s, int vehicle_id);
