@@ -51,8 +51,8 @@ struct problem
 	double vehicle_cap;
 	int max_operating_time;
 	int max_route_duration;
-	double *distance_matrix;
-	double *time_matrix;
+	std::vector<std::vector<double>> distance_matrix;
+	std::vector<std::vector<double>> time_matrix;
 	ProbabilityEstimator pe;
 };
 struct route
@@ -80,7 +80,7 @@ struct route
 };
 struct solution
 {
-	route *routes;
+	std::vector<route> routes;
 	double total_distance_cost;
 	int number_of_vehicles_used;
 	double total_route_duration;
