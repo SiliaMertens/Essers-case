@@ -109,7 +109,7 @@ void bereken_route_cost_zonder_recourse(problem &p, solution &s, int vehicle_id)
 void bereken_route_cost(problem &p, solution &s, int vehicle_id);
 std::vector<double> calculate_probabilities(problem &p, solution &s, int vehicle_id);
 void construct_failure_routes(problem &p, solution &s1, solution &s2, int vehicle_id, int position);
-void bereken_gewogen_route_cost(problem &p, solution &s1, solution s2, int vehicle_id);
+void bereken_gewogen_route_cost(problem &p, solution &s1, solution &s2, int vehicle_id);
 void calculate_total_cost(problem &p, solution &s);
 void change(problem &p, struct solution &s, int vehicle1, int vehicle2);
 int last_route(problem &p, solution &s);

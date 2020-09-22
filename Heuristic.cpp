@@ -483,7 +483,7 @@ void construct_failure_routes(problem &p, solution &s1, solution &s2, int vehicl
 	insert_customer(p, s2, s1.routes[vehicle_id].route[position], vehicle_id, position + 2);
 }
 
-void bereken_gewogen_route_cost(problem &p, solution &s1, solution s2, int vehicle_id)
+void bereken_gewogen_route_cost(problem &p, solution &s1, solution &s2, int vehicle_id)
 { // here, the weighted cost for one vehicle is calculated. As already stated, there are different possibilities where failures can occur in a route. All the different possibilities with their corresponding probabilities are combined here, resulting in a weighted cost
 
 	// change_update_solution_1(p, s1, s2, vehicle_id);
