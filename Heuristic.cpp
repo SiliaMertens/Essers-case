@@ -178,6 +178,7 @@ void read_distance_and_time_matrix(struct problem &p)
 
 void initialize_solution(struct problem &p, struct solution &s)
 {
+	//TODO: Refactor this function to be included in the s initialiser.
 
 	s.total_distance_cost = 0.0;
 	s.number_of_vehicles_used = 0;
@@ -190,39 +191,31 @@ void initialize_solution(struct problem &p, struct solution &s)
 	s.position_customer = {};
 
 	//TODO: clean
-	route route_instance;
 	// cout << "I am Here \n";
+	route route_instance;
+	route_instance.route = {0, 0};
+	route_instance.load = {0, 0};
+	route_instance.earliest_time = {p.nodes[0].lower_tw, p.nodes[0].lower_tw};
+	route_instance.latest_time = {p.nodes[p.n_nodes - 1].upper_tw, p.nodes[p.n_nodes - 1].upper_tw};
+	route_instance.schedule = {0, 0};
+	route_instance.distance_cost = 0.0;
+	route_instance.route_used = 0;
+	route_instance.route_duration = 0.0;
+	route_instance.time_window_violiation = 0.0;
+	route_instance.overtime = 0.0;
+	route_instance.driving_time = 0.0;
+	route_instance.route_cost = 0.0;
+	route_instance.weighted_route_cost = 0.0;
+	route_instance.weighted_distance_cost = 0.0;
+	route_instance.weighted_route_duration = 0.0;
+	route_instance.weighted_time_window_violation = 0.0;
+	route_instance.weighted_overtime = 0.0;
+	route_instance.weighted_driving_time = 0.0;
+	route_instance.departure_time = 0.0;
 
-	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
-	{
-		route_instance.route = {0, 0};
-		route_instance.load = {0, 0};
-		route_instance.earliest_time = {p.nodes[0].lower_tw, p.nodes[0].lower_tw};
-		route_instance.latest_time = {p.nodes[p.n_nodes - 1].upper_tw, p.nodes[p.n_nodes - 1].upper_tw};
-		//TODO: Check if it its correct to change the route.schedule from the below commented to {0,0}
-		// s.routes[vehicle_id].schedule = {s.routes[vehicle_id].earliest_time[s.routes[vehicle_id].route.size() - 1], s.routes[vehicle_id].earliest_time[s.routes[vehicle_id].route.size() - 1]};
-		route_instance.schedule = {0, 0};
-		route_instance.distance_cost = 0.0;
-		route_instance.route_used = 0;
-		route_instance.route_duration = 0.0;
-		route_instance.time_window_violiation = 0.0;
-		route_instance.overtime = 0.0;
-		route_instance.driving_time = 0.0;
-		route_instance.route_cost = 0.0;
-		route_instance.weighted_route_cost = 0.0;
-		route_instance.weighted_distance_cost = 0.0;
-		route_instance.weighted_route_duration = 0.0;
-		route_instance.weighted_time_window_violation = 0.0;
-		route_instance.weighted_overtime = 0.0;
-		route_instance.weighted_driving_time = 0.0;
-		route_instance.departure_time = 0.0;
-
-		s.routes.push_back(route_instance);
-		//TODO: if it is not correct to change the route.schedule, then uncomment this line.
-		// s.routes[vehicle_id].schedule = {s.routes[vehicle_id].earliest_time[s.routes[vehicle_id].route.size() - 1], s.routes[vehicle_id].earliest_time[s.routes[vehicle_id].route.size() - 1]};
-		route_instance = {};
-		// cout << "After the Push " << s.routes.size() << "\n";
-	}
+	//Initialise (bootstrap) the s.routes through assign operator
+	s.routes.assign(p.n_vehicles, route_instance);
+	route_instance = {};
 }
 //FIXME: Optimise the following 4 block of code.
 //REFACTOR: Try memcpy or copy-constructors (i.e. change solution to a class)
@@ -236,63 +229,57 @@ void update_solution(struct problem &p, struct solution &s1, struct solution &s2
 	s2.total_overtime = s1.total_overtime;
 	s2.total_driving_time = s1.total_driving_time;
 	s2.total_cost = s1.total_cost;
+	//Vector to vector copy c++11 (copy & move semantics)
+	s2.routes = s1.routes;
 
-	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
-	{
-		s2.routes[vehicle_id].route.resize(s1.routes[vehicle_id].route.size());
-		s2.routes[vehicle_id].load.resize(s1.routes[vehicle_id].load.size());
-		s2.routes[vehicle_id].earliest_time.resize(s1.routes[vehicle_id].earliest_time.size());
-		s2.routes[vehicle_id].latest_time.resize(s1.routes[vehicle_id].latest_time.size());
-		s2.routes[vehicle_id].schedule.resize(s1.routes[vehicle_id].schedule.size());
+	// for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+	// {
+	// 	s2.routes[vehicle_id].route = s1.routes[vehicle_id].route;
+	// 	s2.routes[vehicle_id].load = s1.routes[vehicle_id].load;
+	// 	s2.routes[vehicle_id].earliest_time = s1.routes[vehicle_id].earliest_time;
+	// 	s2.routes[vehicle_id].latest_time = s1.routes[vehicle_id].latest_time;
+	// 	s2.routes[vehicle_id].schedule = s1.routes[vehicle_id].schedule;
 
-		for (int index = 0; index < s1.routes[vehicle_id].route.size(); index++)
-		{
-			s2.routes[vehicle_id].route[index] = s1.routes[vehicle_id].route[index];
-			s2.routes[vehicle_id].load[index] = s1.routes[vehicle_id].load[index];
-			s2.routes[vehicle_id].earliest_time[index] = s1.routes[vehicle_id].earliest_time[index];
-			s2.routes[vehicle_id].latest_time[index] = s1.routes[vehicle_id].latest_time[index];
-			s2.routes[vehicle_id].schedule[index] = s1.routes[vehicle_id].schedule[index];
-		}
-		s2.routes[vehicle_id].distance_cost = s1.routes[vehicle_id].distance_cost;
-		s2.routes[vehicle_id].route_used = s1.routes[vehicle_id].route_used;
-		s2.routes[vehicle_id].route_duration = s1.routes[vehicle_id].route_duration;
-		s2.routes[vehicle_id].time_window_violiation = s1.routes[vehicle_id].time_window_violiation;
-		s2.routes[vehicle_id].overtime = s1.routes[vehicle_id].overtime;
-		s2.routes[vehicle_id].driving_time = s1.routes[vehicle_id].driving_time;
-		s2.routes[vehicle_id].route_cost = s1.routes[vehicle_id].route_cost;
-		s2.routes[vehicle_id].weighted_route_cost = s1.routes[vehicle_id].weighted_route_cost;
-		s2.routes[vehicle_id].weighted_route_cost = s1.routes[vehicle_id].weighted_route_cost;
-		s2.routes[vehicle_id].weighted_distance_cost = s1.routes[vehicle_id].weighted_distance_cost;
-		s2.routes[vehicle_id].weighted_route_duration = s1.routes[vehicle_id].weighted_route_duration;
-		s2.routes[vehicle_id].weighted_time_window_violation = s1.routes[vehicle_id].weighted_time_window_violation;
-		s2.routes[vehicle_id].weighted_overtime = s1.routes[vehicle_id].weighted_overtime;
-		s2.routes[vehicle_id].weighted_driving_time = s1.routes[vehicle_id].weighted_driving_time;
-		s2.routes[vehicle_id].departure_time = s1.routes[vehicle_id].departure_time;
-	}
+	// 	s2.routes[vehicle_id].distance_cost = s1.routes[vehicle_id].distance_cost;
+	// 	s2.routes[vehicle_id].route_used = s1.routes[vehicle_id].route_used;
+	// 	s2.routes[vehicle_id].route_duration = s1.routes[vehicle_id].route_duration;
+	// 	s2.routes[vehicle_id].time_window_violiation = s1.routes[vehicle_id].time_window_violiation;
+	// 	s2.routes[vehicle_id].overtime = s1.routes[vehicle_id].overtime;
+	// 	s2.routes[vehicle_id].driving_time = s1.routes[vehicle_id].driving_time;
+	// 	s2.routes[vehicle_id].route_cost = s1.routes[vehicle_id].route_cost;
+	// 	s2.routes[vehicle_id].weighted_route_cost = s1.routes[vehicle_id].weighted_route_cost;
+	// 	s2.routes[vehicle_id].weighted_distance_cost = s1.routes[vehicle_id].weighted_distance_cost;
+	// 	s2.routes[vehicle_id].weighted_route_duration = s1.routes[vehicle_id].weighted_route_duration;
+	// 	s2.routes[vehicle_id].weighted_time_window_violation = s1.routes[vehicle_id].weighted_time_window_violation;
+	// 	s2.routes[vehicle_id].weighted_overtime = s1.routes[vehicle_id].weighted_overtime;
+	// 	s2.routes[vehicle_id].weighted_driving_time = s1.routes[vehicle_id].weighted_driving_time;
+	// 	s2.routes[vehicle_id].departure_time = s1.routes[vehicle_id].departure_time;
+	// }
 }
 
 void change_update_solution_vehicle(solution &s1, solution &s2, int vehicle1, int vehicle2)
 {
-	s1.routes[vehicle2].route = s2.routes[vehicle1].route;
-	s1.routes[vehicle2].load = s2.routes[vehicle1].load;
-	s1.routes[vehicle2].earliest_time = s2.routes[vehicle1].earliest_time;
-	s1.routes[vehicle2].latest_time = s2.routes[vehicle1].latest_time;
-	s1.routes[vehicle2].schedule = s2.routes[vehicle1].schedule;
-	s1.routes[vehicle2].distance_cost = s2.routes[vehicle1].distance_cost;
-	s1.routes[vehicle2].route_used = s2.routes[vehicle1].route_used;
-	s1.routes[vehicle2].route_duration = s2.routes[vehicle1].route_duration;
-	s1.routes[vehicle2].time_window_violiation = s2.routes[vehicle1].time_window_violiation;
-	s1.routes[vehicle2].overtime = s2.routes[vehicle1].overtime;
-	s1.routes[vehicle2].driving_time = s2.routes[vehicle1].driving_time;
-	s1.routes[vehicle2].route_cost = s2.routes[vehicle1].route_cost;
-	s1.routes[vehicle2].weighted_route_cost = s2.routes[vehicle1].weighted_route_cost;
-	s1.routes[vehicle2].weighted_route_cost = s2.routes[vehicle1].weighted_route_cost;
-	s1.routes[vehicle2].weighted_distance_cost = s2.routes[vehicle1].weighted_distance_cost;
-	s1.routes[vehicle2].weighted_route_duration = s2.routes[vehicle1].weighted_route_duration;
-	s1.routes[vehicle2].weighted_time_window_violation = s2.routes[vehicle1].weighted_time_window_violation;
-	s1.routes[vehicle2].weighted_overtime = s2.routes[vehicle1].weighted_overtime;
-	s1.routes[vehicle2].weighted_driving_time = s2.routes[vehicle1].weighted_driving_time;
-	s1.routes[vehicle2].departure_time = s2.routes[vehicle1].departure_time;
+	s1.routes[vehicle2] = s2.routes[vehicle1];
+
+	// s1.routes[vehicle2].route = s2.routes[vehicle1].route;
+	// s1.routes[vehicle2].load = s2.routes[vehicle1].load;
+	// s1.routes[vehicle2].earliest_time = s2.routes[vehicle1].earliest_time;
+	// s1.routes[vehicle2].latest_time = s2.routes[vehicle1].latest_time;
+	// s1.routes[vehicle2].schedule = s2.routes[vehicle1].schedule;
+	// s1.routes[vehicle2].distance_cost = s2.routes[vehicle1].distance_cost;
+	// s1.routes[vehicle2].route_used = s2.routes[vehicle1].route_used;
+	// s1.routes[vehicle2].route_duration = s2.routes[vehicle1].route_duration;
+	// s1.routes[vehicle2].time_window_violiation = s2.routes[vehicle1].time_window_violiation;
+	// s1.routes[vehicle2].overtime = s2.routes[vehicle1].overtime;
+	// s1.routes[vehicle2].driving_time = s2.routes[vehicle1].driving_time;
+	// s1.routes[vehicle2].route_cost = s2.routes[vehicle1].route_cost;
+	// s1.routes[vehicle2].weighted_route_cost = s2.routes[vehicle1].weighted_route_cost;
+	// s1.routes[vehicle2].weighted_distance_cost = s2.routes[vehicle1].weighted_distance_cost;
+	// s1.routes[vehicle2].weighted_route_duration = s2.routes[vehicle1].weighted_route_duration;
+	// s1.routes[vehicle2].weighted_time_window_violation = s2.routes[vehicle1].weighted_time_window_violation;
+	// s1.routes[vehicle2].weighted_overtime = s2.routes[vehicle1].weighted_overtime;
+	// s1.routes[vehicle2].weighted_driving_time = s2.routes[vehicle1].weighted_driving_time;
+	// s1.routes[vehicle2].departure_time = s2.routes[vehicle1].departure_time;
 }
 
 void position_removed_customers(problem &p, solution &s, int customer_id)
@@ -584,11 +571,12 @@ void relocate(struct problem &p, struct solution &s_prev, struct solution &s_cur
 
 	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 	{ // over alle routes loopen
-        if (s_prev.routes[vehicle_id].route.size() <= 3) {
-            // '0 0' or '0 x 0': no relocate necessary
-            continue;
-        }
-            
+		if (s_prev.routes[vehicle_id].route.size() <= 3)
+		{
+			// '0 0' or '0 x 0': no relocate necessary
+			continue;
+		}
+
 		for (int position = 1; position < s_prev.routes[vehicle_id].route.size() - 1; position++)
 		{ // over alle klantposities loopen
 			/*cout << "vehicle " << vehicle_id << " prev route size " << s_prev.routes[vehicle_id].route.size() << "\n";*/

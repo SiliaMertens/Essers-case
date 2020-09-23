@@ -32,6 +32,9 @@ double allowable_operating_time_cost = 1000;
 /* Main function to run the algorithm */
 int main(int argc, char *argv[])
 {
+	cout << " ============ Start of execution ======== "
+		 << "\n";
+	auto start = chrono::high_resolution_clock::now();
 
 	double perturbation_percentage = 0.2;
 	int value_no_improvement = 2;
@@ -587,6 +590,17 @@ int main(int argc, char *argv[])
 		}
 
 		cout << "final ILS best " << s_ILS_best.total_cost << "\n";
+
+		auto stop = chrono::high_resolution_clock::now();
+
+		// Get duration. Substart timepoints to
+		// get durarion. To cast it to proper unit
+		// use duration cast method
+		auto duration = chrono::duration_cast<chrono::minutes>(stop - start);
+		cout << "Time taken to run the algorithm is: : " << duration.count() << " minutes" << endl;
+		cout << " ============ End of execution ======== (still waiting to write the results) "
+			 << "\n";
+
 		write_output_file(p, s_ILS_best);
 	}
 }
