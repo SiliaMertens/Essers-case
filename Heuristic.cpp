@@ -948,7 +948,7 @@ vector<double> probability_of_failure(problem &p, solution &s, int vehicle_id)
 
 	// Initialise with 0 for depot point.
 	vector<double> failure{0.0}; // the different probabilities are put in a vector
-
+	//If route was initialised wrongly with only depot point as start and stop {0,0}
 	if (s.routes[vehicle_id].route.size() == 2)
 	{
 
@@ -958,18 +958,15 @@ vector<double> probability_of_failure(problem &p, solution &s, int vehicle_id)
 	else
 	{
 
-		vector<double>::iterator iter = failure.begin();
+		//To Slice the route vector to execlude depot_node
+		auto first = s.routes[vehicle_id].route.begin() + 1;
+		auto last = s.routes[vehicle_id].route.end() - 1;
 		// Should be equal to the number of clients in the current route.
-		std::vector<std::string> customersIDs;
-
-		//cout << "vehicle " << vehicle_id << "\n";
-
-		for (int i = 1; i < s.routes[vehicle_id].route.size() - 1; i++) // hier wordt wel geen rekening gehouden met de veronderstelling dat er geen failure mogelijk is bij de eerste klant in de route
-		{
-
-			customersIDs.push_back(std::to_string(p.nodes[s.routes[vehicle_id].route[i]].order_nr));
-		}
-
+		std::vector<int> customersIDs(first, last);
+		// for (int i = 0, max = s.routes[vehicle_id].route.size(); i < max; i++)
+		// {
+		// 	cout << " original route: " << s.routes[vehicle_id].route[i] << endl;
+		// }
 		std::vector<std::vector<double>> emplDists = p.pe.getEmpricialDistributions(customersIDs);
 		vector<double> jointCdfRes = p.pe.jointCDF(emplDists);
 		failure.insert(failure.end(), jointCdfRes.begin(), jointCdfRes.end());

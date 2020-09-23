@@ -11,7 +11,7 @@
 
 #include "ProbabilityEstimator.h"
 
-inline double ProbabilityEstimator::convolution(int v, const std::vector<double>& probabDistOne, const std::vector<double>& probabDistTwo)
+inline double ProbabilityEstimator::convolution(int v, const std::vector<double> &probabDistOne, const std::vector<double> &probabDistTwo)
 {
     double convSum = 0.0;
     for (int w = 1; w < v; w++)
@@ -27,7 +27,7 @@ inline double ProbabilityEstimator::convolution(int v, const std::vector<double>
     return convSum;
 }
 
-inline std::vector<double> ProbabilityEstimator::cdf(const std::vector<double>& probabDistOne, const std::vector<double>& probabDistTwo)
+inline std::vector<double> ProbabilityEstimator::cdf(const std::vector<double> &probabDistOne, const std::vector<double> &probabDistTwo)
 {
     if (probabDistOne.size() != probabDistTwo.size())
     {
@@ -51,15 +51,17 @@ inline std::vector<double> ProbabilityEstimator::cdf(const std::vector<double>& 
     return jointDist;
 }
 
-inline double ProbabilityEstimator::accumulateResult(const std::vector<double>& probabDist)
+inline double ProbabilityEstimator::accumulateResult(const std::vector<double> &probabDist)
 {
     double sum_of_elems = 0.0;
     // std::for_each(probabDist.begin(), probabDist.end(), [&](double n) { sum_of_elems += n; });
-    for (auto& n : probabDist) sum_of_elems += n;
+    for (auto &n : probabDist){
+        sum_of_elems += n;
+    }
     return 1 - sum_of_elems;
 }
 
-std::vector<double> ProbabilityEstimator::jointCDF(const std::vector<std::vector<double>>& emplDists)
+std::vector<double> ProbabilityEstimator::jointCDF(const std::vector<std::vector<double>> &emplDists)
 {
     // Should be equal to the number of clients in the current route.
     int nrOfDists = emplDists.size();
@@ -81,58 +83,39 @@ std::vector<double> ProbabilityEstimator::jointCDF(const std::vector<std::vector
     return accuJoRes;
 }
 
-std::vector<std::vector<double>> ProbabilityEstimator::getEmpricialDistributions(std::vector<std::string>& clientsIDs)
+std::vector<std::vector<double>> ProbabilityEstimator::getEmpricialDistributions(std::vector<int> &clientsIDs)
 {
-    //std::cout << "clientsIDs ";
-    //for (int i = 0; i < clientsIDs.size(); i++) {
-    //    std::cout << clientsIDs[i] << " ";
-    //}
-    //std::cout << "\n";
-
     std::vector<std::vector<double>> resultDistros;
     //std::cout << "resultDistros " << resultDistros.size() << "\n";
     if (clientsIDs.size() < 1)
     {
         throw std::invalid_argument("ProbabilityEstimator::getEmpricialDistributions() --> Client IDs list cannot be empty!");
     }
-    std::map<std::string, std::vector<double>>::iterator it;
-    for (const auto& id : clientsIDs)
+    std::vector<double> current_distro;
+    for (const auto &id : clientsIDs)
     {
-        //std::cout << "id " << id << "\n";
-        //LookUp an Id
-        it = this->currCollDateMap.find(id);
-        
-        //If exist
-        if (it != this->currCollDateMap.end())
+        try
         {
-            resultDistros.push_back(it->second);
-
-            //std::cout << "resultDistros content \n";
-            //for (int i = 0; i < resultDistros.size(); i++) {
-            //    for (int j = 0; j < resultDistros.size(); j++) {
-            //        std::cout << resultDistros[i][j] << " ";
-            //    }
-            //}
-
-            //std::cout << "\n";
+            //LookUp an Id (i.e. id - 1 because clients starts from 1-index while vector is 0-index)
+            current_distro = this->currCollDateVector.at((id - 1));
         }
-        else
+        catch (const std::exception &e)
         {
-            std::cerr << "getEmpricialDistributions known client-ids:\n";
-            for (auto imap: currCollDateMap)
-                std::cerr << " - "<<imap.first<<"\n";
-            throw std::runtime_error("ProbabilityEstimator::getEmpricialDistributions() -> Could not find a probability distribution for client-id: " + id);
+            std::cerr << e.what() << '\n';
+            throw std::runtime_error("ProbabilityEstimator::getEmpricialDistributions() -> Could not find a probability distribution for client-id: " + std::to_string(id) + " --- Current Dist-Vector Size is: " + std::to_string(this->currCollDateVector.size()));
         }
+        resultDistros.push_back(current_distro);
+        current_distro.clear();
     }
     return resultDistros;
 }
 //will replace the above...
-void ProbabilityEstimator::readDistributions(const std::string& collection_date)
+void ProbabilityEstimator::readDistributions(const std::string &collection_date)
 {
 
     std::cout << "Read distributions (will replace the above) \n";
     // Clear the current distributions (i.e. distributions of the previous date)
-    this->currCollDateMap.clear();
+    this->currCollDateVector.clear();
 
     std::ifstream fin;
     std::vector<double> cDist;
@@ -148,6 +131,7 @@ void ProbabilityEstimator::readDistributions(const std::string& collection_date)
             std::stringstream cstr(line);
             //Read the first column of the line
             //This represents the client id
+            //TODO: remove order_number and change the way files are generated.
             std::getline(cstr, key, ',');
             while (std::getline(cstr, value, ','))
             {
@@ -155,16 +139,18 @@ void ProbabilityEstimator::readDistributions(const std::string& collection_date)
                 {
                     cDist.push_back(std::stod(value));
                 }
-                catch (const std::exception& e)
+                catch (const std::exception &e)
                 {
                     throw std::invalid_argument("ProbabilityEstimator.readDistributions() -> Value is not converted to double or does not exist in the file --> Value: " + value);
                 }
             }
-            this->currCollDateMap.insert(std::make_pair(key, cDist));
+            this->currCollDateVector.push_back(cDist);
             //Clear the vector to store new values
             cDist.clear();
         }
-    } else {
+    }
+    else
+    {
         throw std::runtime_error("Failed to read file '" + collection_date + ".csv" + "'\n");
     }
     fin.close();
