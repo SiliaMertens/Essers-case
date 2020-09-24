@@ -22,13 +22,27 @@ void show(vector<int> const &input)
 	}
 	cout << "\n";
 }
+void show_usage(std::string name)
+{
+	std::cerr << "---------------------------------------------------------------------\n"
+			  << "Usage: " << name << " arg1 arg2 arg3 ..... arg 6 | ARGUMENTS (Required)\n"
+			  << "---------------------------------------------------------------------\n"
+			  << "ARGUMENTS:\n"
+			  << "\tdata_file: A text file representing the dataset. E.g. Inputfile_tw2u.txt\n"
+			  << "\tcollection_date: A specific day to run the algorithm on. E.g. 3-Sep-2018\n"
+			  << "\tcoordinates_file: A text file representing an adjacency matrix of nodes. E.g. distance_matrix3sep.txt\n"
+			  << "\ttime_window_violation_cost: A double number. E.g. 0.5\n"
+			  << "\tallowable_operating_time_cost: A double number. E.g. 1000\n"
+			  << "\tnumber_of_bins: An integer number representing the resolution of the probability estimator. E.g. 10"
+			  << std::endl;
+}
+// "General_Cargo_LTL_2018_v10072019_input_code adjusted tw.txt" "2-Jan-2018" "distance_matrix 2 jan.txt" 10 1000 10
+string data_file;		 //= "Inputcode10customers.txt";
+string coordinates_file; // = "distance_matrix10klanten.txt";
 
-string data_file = "General_Cargo_LTL_2018_v10072019_input_code adjusted tw.txt";
-string coordinates_file = "distance_matrix 2 jan.txt";
-
-double time_window_violation_cost = 10;
-double allowable_operating_time_cost = 1000;
-
+double time_window_violation_cost;	  // = 10;
+double allowable_operating_time_cost; // = 1000;
+int probability_resolution;
 /* Main function to run the algorithm */
 int main(int argc, char *argv[])
 {
@@ -53,19 +67,30 @@ int main(int argc, char *argv[])
 	*/
 	struct problem p;
 
-	p.collection_date = "2-Jan-2018";
-
-	//if (argc > 1) {
-
-	//	time_window_violation_cost = atof(argv[1]);
-	//	allowable_operating_time_cost = atof(argv[2]);
-	//}
-
-	//if (argc > 1) {
-	//	perturbation_percentage = atoi(argv[1]);
-	//	value_no_improvement = atoi(argv[2]);
-
-	//}
+	if (argc < 7)
+	{
+		std::cerr << "The program expect 6 arguments to be passed.\nCurrently " + to_string(argc - 1) + " are passed \nSee Usage below." << std::endl;
+		show_usage(argv[0]);
+		return 1;
+	}
+	else
+	{
+		try
+		{
+			data_file = argv[1];
+			p.collection_date = argv[2];
+			coordinates_file = argv[3];
+			time_window_violation_cost = stod(argv[4]);
+			allowable_operating_time_cost = stod(argv[5]);
+			probability_resolution = stoi(argv[6]);
+		}
+		catch (const std::exception &e)
+		{
+			std::cerr << e.what() << '\n';
+			show_usage(argv[0]);
+			throw std::invalid_argument("main() -> Value is not converted to double or does not exist in the arguments. See the usage.");
+		}
+	}
 
 	read_data(p);
 	read_distance_and_time_matrix(p);
@@ -122,8 +147,8 @@ int main(int argc, char *argv[])
 	// Put current solution as local_best
 	update_solution(p, s_curr, s_local_best);
 
-	cout << "Initial solution with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-		 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
+	cout << "Initial solution with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost << " distance_parameter " << s_local_best.total_distance_parameter
+		 << " route duration " << s_local_best.total_route_duration << " route duration parameter " << s_local_best.total_route_duration_parameter << " time window violation " << s_local_best.total_time_window_violation << " time window violation parameter " << s_local_best.total_time_window_violation_parameter << " overtime " << s_local_best.total_overtime << " overtime_parameter " << s_local_best.total_overtime_parameter << " allowable operating time " << s_local_best.total_driving_time << " allowable operating time_parameter " << s_local_best.total_driving_time_parameter << " total cost " << s_local_best.total_cost << "\n";
 
 	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 	{
@@ -137,6 +162,7 @@ int main(int argc, char *argv[])
 
 	update_solution(p, s_local_best, s_total_best);
 	update_solution(p, s_local_best, s_ILS_best);
+
 	cout << "total best " << s_total_best.total_cost << "\n";
 	/*
 	-----------------------
@@ -451,7 +477,8 @@ int main(int argc, char *argv[])
 			relocate(p, s_prev, s_curr, s_local_best);
 
 			cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-				 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
+				 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " time window violation parameter " << s_local_best.total_time_window_violation_parameter
+				 << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " allowable operating time parameter " << s_local_best.total_driving_time_parameter << " total cost " << s_local_best.total_cost << "\n";
 			for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 			{
 				for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
@@ -488,7 +515,8 @@ int main(int argc, char *argv[])
 			swap(p, s_prev, s_curr, s_local_best);
 
 			cout << "\nNew best solution after swap with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-				 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
+				 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " time window violation parameter " << s_local_best.total_time_window_violation_parameter
+				 << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " allowable operating time parameter " << s_local_best.total_driving_time_parameter << " total cost " << s_local_best.total_cost << "\n";
 			for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 			{
 				for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
@@ -543,7 +571,8 @@ int main(int argc, char *argv[])
 			relocate(p, s_prev, s_curr, s_local_best);
 
 			cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-				 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
+				 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " time window violation parameter " << s_local_best.total_time_window_violation_parameter
+				 << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " allowable operating time parameter " << s_local_best.total_driving_time_parameter << " total cost " << s_local_best.total_cost << "\n";
 			for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 			{
 				for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
@@ -603,4 +632,5 @@ int main(int argc, char *argv[])
 
 		write_output_file(p, s_ILS_best);
 	}
+	return 0;
 }

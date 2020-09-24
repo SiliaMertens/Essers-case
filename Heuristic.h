@@ -8,8 +8,8 @@
 
 const double fixed_vehicle_cost = 102.24;
 const double km_cost = 0.5834;
-const int driver_cost = 25;
-const double overtime_cost = 2.78;
+const double driver_cost = 0.4166666666666667;
+const double overtime_cost = 0.0463333333333333;
 extern double time_window_violation_cost;
 extern double allowable_operating_time_cost;
 
@@ -63,18 +63,29 @@ struct route
 	std::vector<double> earliest_time;
 	std::vector<double> latest_time;
 	double distance_cost;
+	double distance_parameter;
+	double operating_time;
 	int route_used;
 	double route_duration;
-	double time_window_violiation;
+	double route_duration_parameter;
+	double time_window_violation;
+	double time_window_violation_parameter;
 	double overtime;
+	double overtime_parameter;
 	double driving_time;
+	double driving_time_parameter;
 	double route_cost;
 	double weighted_route_cost;
 	double weighted_distance_cost;
+	double weighted_distance_parameter;
 	double weighted_route_duration;
+	double weighted_route_duration_parameter;
 	double weighted_time_window_violation;
+	double weighted_time_window_violation_parameter;
 	double weighted_overtime;
+	double weighted_overtime_parameter;
 	double weighted_driving_time;
+	double weighted_driving_time_parameter;
 	std::vector<double> probability;
 	double departure_time;
 };
@@ -82,12 +93,17 @@ struct solution
 {
 	std::vector<route> routes;
 	double total_distance_cost;
+	double total_distance_parameter;
 	int number_of_vehicles_used;
 	double total_route_duration;
+	double total_route_duration_parameter;
 	double total_cost;
 	double total_time_window_violation;
+	double total_time_window_violation_parameter;
 	double total_overtime;
+	double total_overtime_parameter;
 	double total_driving_time;
+	double total_driving_time_parameter;
 	std::vector<int> route_customer;
 	std::vector<int> position_customer;
 	bool possible_insertion;
@@ -100,9 +116,7 @@ void read_distance_and_time_matrix(struct problem &p);
 /* Solution management functions */
 void initialize_solution(problem &p, solution &s);
 void update_solution(problem &p, solution &s1, solution &s2);
-// void change_update_solution_1(problem &p, solution &s1, solution &s2, int vehicle1);
-// void change_update_solution_2(problem &p, solution &s1, int vehicle1, int vehicle2);
-// void change_update_solution_3(problem &p, solution &s1, solution &s2, int vehicle1, int vehicle2);
+
 void change_update_solution_vehicle(solution &s1, solution &s2, int vehicle1, int vehicle2);
 void position_removed_customers(problem &p, solution &s, int customer_id);
 void bereken_route_cost_zonder_recourse(problem &p, solution &s, int vehicle_id);
