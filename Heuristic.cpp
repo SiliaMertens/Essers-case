@@ -133,7 +133,7 @@ void read_data(problem &p)
 	infile.close();
 }
 
-void read_distance_and_time_matrix(struct problem &p)
+void read_distance_and_time_matrix(problem &p)
 { // dit moet via Graphhopper, afstanden die daar berekend zijn, aanroepen. Bestand inlezen, berekeningen met x-coord en y-coord moet niet meer gedaan worden.
 
 	// p.distance_matrix = new double[(long long)p.n_nodes * p.n_nodes];
@@ -176,7 +176,7 @@ void read_distance_and_time_matrix(struct problem &p)
 	infile.close();
 }
 
-void initialize_solution(struct problem &p, struct solution &s)
+void initialize_solution(problem &p, solution &s)
 {
 	//TODO: Refactor this function to be included in the s initialiser.
 
@@ -235,7 +235,7 @@ void initialize_solution(struct problem &p, struct solution &s)
 }
 //FIXME: Optimise the following 4 block of code.
 //REFACTOR: Try memcpy or copy-constructors (i.e. change solution to a class)
-void update_solution(struct problem &p, struct solution &s1, struct solution &s2)
+void update_solution(solution &s1, solution &s2)
 {
 
 	s2.total_distance_cost = s1.total_distance_cost;
@@ -564,7 +564,7 @@ void calculate_total_cost(problem &p, solution &s)
 	//cout << "overtime " << s.total_overtime << "\n";
 }
 
-void change(problem &p, struct solution &s, int vehicle1, int vehicle2)
+void change(problem &p, solution &s, int vehicle1, int vehicle2)
 {
 
 	struct solution s_try;
@@ -594,12 +594,13 @@ int last_route(problem &p, solution &s)
 			return last_vehicle;
 		}
 	}
+	return last_vehicle;
 }
 
-void relocate(struct problem &p, struct solution &s_prev, struct solution &s_curr, struct solution &s_best)
+void relocate(problem &p, solution &s_prev, solution &s_curr, solution &s_best)
 {
 
-	struct solution s_recourse;
+	solution s_recourse;
 	initialize_solution(p, s_recourse);
 
 	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
@@ -615,7 +616,7 @@ void relocate(struct problem &p, struct solution &s_prev, struct solution &s_cur
 			/*cout << "vehicle " << vehicle_id << " prev route size " << s_prev.routes[vehicle_id].route.size() << "\n";*/
 			int customer_id = s_prev.routes[vehicle_id].route[position];
 			/*cout << "customer_id " << customer_id << "\n";*/
-			update_solution(p, s_prev, s_curr);
+			update_solution(s_prev, s_curr);
 			remove_customer(p, s_curr, vehicle_id, position);
 			//update_solution(p, s_curr, s_recourse);
 			bereken_gewogen_route_cost(p, s_curr, s_recourse, vehicle_id);
@@ -635,7 +636,7 @@ void relocate(struct problem &p, struct solution &s_prev, struct solution &s_cur
 
 			if (s_best.total_cost > s_curr.total_cost)
 			{
-				update_solution(p, s_curr, s_best);
+				update_solution(s_curr, s_best);
 				update_load(p, s_best, vehicle_id);
 				update_earliest_time(p, s_best, vehicle_id);
 				update_latest_time(p, s_best, vehicle_id);
@@ -645,10 +646,10 @@ void relocate(struct problem &p, struct solution &s_prev, struct solution &s_cur
 	}
 }
 
-void swap(struct problem &p, struct solution &s1, struct solution &s2, struct solution &s3)
+void swap(problem &p, solution &s1, solution &s2, solution &s3)
 {
 
-	struct solution s_recourse;
+	solution s_recourse;
 	initialize_solution(p, s_recourse);
 
 	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
@@ -665,7 +666,7 @@ void swap(struct problem &p, struct solution &s1, struct solution &s2, struct so
 					{
 
 						int customer_id = s1.routes[vehicle_id].route[position];
-						update_solution(p, s1, s2);
+						update_solution(s1, s2);
 						remove_customer(p, s2, vehicle_id, position); // klant uit de route halen
 						//update_solution(p, s2, s_recourse);
 						bereken_gewogen_route_cost(p, s2, s_recourse, vehicle_id);
@@ -718,7 +719,7 @@ void swap(struct problem &p, struct solution &s1, struct solution &s2, struct so
 
 										if (s3.total_cost > s2.total_cost)
 										{
-											update_solution(p, s2, s3);
+											update_solution(s2, s3);
 											update_load(p, s3, vehicle_id);
 											update_earliest_time(p, s3, vehicle_id);
 											update_latest_time(p, s3, vehicle_id);
@@ -735,10 +736,10 @@ void swap(struct problem &p, struct solution &s1, struct solution &s2, struct so
 	}
 }
 
-void remove_customer(struct problem &p, struct solution &s, int vehicle_id, int position)
+void remove_customer(problem &p, solution &s, int vehicle_id, int position)
 {
 
-	int customer_id = s.routes[vehicle_id].route[position];
+	// int customer_id = s.routes[vehicle_id].route[position];
 
 	s.routes[vehicle_id].route.erase(s.routes[vehicle_id].route.begin() + position);
 
@@ -748,7 +749,7 @@ void remove_customer(struct problem &p, struct solution &s, int vehicle_id, int 
 	update_schedule(p, s, vehicle_id);
 }
 
-void insert_customer(struct problem &p, struct solution &s, int customer_id, int vehicle_id, int position)
+void insert_customer(problem &p, solution &s, int customer_id, int vehicle_id, int position)
 {
 
 	s.routes[vehicle_id].route.insert(s.routes[vehicle_id].route.begin() + position, customer_id);
@@ -759,7 +760,7 @@ void insert_customer(struct problem &p, struct solution &s, int customer_id, int
 	update_schedule(p, s, vehicle_id);
 }
 
-void perform_best_insertion_for_swap(struct problem &p, struct solution &s, int customer_id, int vehicle_id)
+void perform_best_insertion_for_swap(problem &p, solution &s, int customer_id, int vehicle_id)
 {
 
 	s.possible_insertion = 1;
@@ -768,7 +769,7 @@ void perform_best_insertion_for_swap(struct problem &p, struct solution &s, int 
 	int best_position = -1;
 	struct solution s_try;
 	initialize_solution(p, s_try);
-	update_solution(p, s, s_try);
+	update_solution(s, s_try);
 
 	int check = 0;
 
@@ -878,7 +879,7 @@ void perform_best_insertion_for_swap(struct problem &p, struct solution &s, int 
 	//cout << "best customer " << customer_id << " vehicle " << best_vehicle_id << " position " << best_position << " cost " << best_cost << "\n";
 }
 
-void perform_best_insertion(struct problem &p, struct solution &s, int customer_id)
+void perform_best_insertion(problem &p, solution &s, int customer_id)
 {
 
 	//cout << "Customer id perform best insertion " << customer_id << "\n";
@@ -888,7 +889,7 @@ void perform_best_insertion(struct problem &p, struct solution &s, int customer_
 	int best_position = -1;
 	struct solution s_try;
 	initialize_solution(p, s_try);
-	update_solution(p, s, s_try);
+	update_solution(s, s_try);
 
 	int check = 0;
 
@@ -1010,7 +1011,7 @@ vector<double> probability_of_failure(problem &p, solution &s, int vehicle_id)
 	return failure;
 }
 
-bool check_load(struct problem &p, struct solution &s, int vehicle_id)
+bool check_load(problem &p, solution &s, int vehicle_id)
 {
 
 	for (int position = 0; position < s.routes[vehicle_id].route.size(); position++)
@@ -1024,7 +1025,7 @@ bool check_load(struct problem &p, struct solution &s, int vehicle_id)
 	return true;
 }
 
-bool check_schedule(struct problem &p, struct solution &s, int vehicle_id)
+bool check_schedule(problem &p, solution &s, int vehicle_id)
 {
 
 	for (int position = 0; position < s.routes[vehicle_id].route.size(); position++)
@@ -1039,7 +1040,7 @@ bool check_schedule(struct problem &p, struct solution &s, int vehicle_id)
 	return true;
 }
 
-void update_load(struct problem &p, struct solution &s, int vehicle_id)
+void update_load(problem &p, solution &s, int vehicle_id)
 {
 
 	s.routes[vehicle_id].load.resize(s.routes[vehicle_id].route.size());
@@ -1052,7 +1053,7 @@ void update_load(struct problem &p, struct solution &s, int vehicle_id)
 	}
 }
 
-void update_schedule(struct problem &p, struct solution &s, int vehicle_id)
+void update_schedule(problem &p, solution &s, int vehicle_id)
 {
 
 	s.routes[vehicle_id].schedule.resize(s.routes[vehicle_id].route.size());
@@ -1072,7 +1073,7 @@ void update_schedule(struct problem &p, struct solution &s, int vehicle_id)
 	}
 }
 
-void update_earliest_time(struct problem &p, struct solution &s, int vehicle_id)
+void update_earliest_time(problem &p, solution &s, int vehicle_id)
 {
 
 	s.routes[vehicle_id].earliest_time.resize(s.routes[vehicle_id].route.size());
@@ -1090,7 +1091,7 @@ void update_earliest_time(struct problem &p, struct solution &s, int vehicle_id)
 	}
 }
 
-void update_latest_time(struct problem &p, struct solution &s, int vehicle_id)
+void update_latest_time(problem &p, solution &s, int vehicle_id)
 {
 
 	s.routes[vehicle_id].latest_time.resize(s.routes[vehicle_id].route.size());
@@ -1108,7 +1109,7 @@ void update_latest_time(struct problem &p, struct solution &s, int vehicle_id)
 	}
 }
 
-void write_output_file(struct problem &p, struct solution &s)
+void write_output_file(problem &p, solution &s)
 { // nog toevoegen over welk scenario (experiment) het gaat
 
 	ofstream output_file;

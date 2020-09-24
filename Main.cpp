@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 	}
 
 	// Put current solution as local_best
-	update_solution(p, s_curr, s_local_best);
+	update_solution(s_curr, s_local_best);
 
 	cout << "Initial solution with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost << " distance_parameter " << s_local_best.total_distance_parameter
 		 << " route duration " << s_local_best.total_route_duration << " route duration parameter " << s_local_best.total_route_duration_parameter << " time window violation " << s_local_best.total_time_window_violation << " time window violation parameter " << s_local_best.total_time_window_violation_parameter << " overtime " << s_local_best.total_overtime << " overtime_parameter " << s_local_best.total_overtime_parameter << " allowable operating time " << s_local_best.total_driving_time << " allowable operating time_parameter " << s_local_best.total_driving_time_parameter << " total cost " << s_local_best.total_cost << "\n";
@@ -160,8 +160,8 @@ int main(int argc, char *argv[])
 		cout << "\n";
 	}
 
-	update_solution(p, s_local_best, s_total_best);
-	update_solution(p, s_local_best, s_ILS_best);
+	update_solution(s_local_best, s_total_best);
+	update_solution(s_local_best, s_ILS_best);
 
 	cout << "total best " << s_total_best.total_cost << "\n";
 	/*
@@ -183,13 +183,13 @@ int main(int argc, char *argv[])
 	*/
 	// Store the best solution as the previous best.
 
-	update_solution(p, s_local_best, s_prev);
+	update_solution(s_local_best, s_prev);
 	relocate(p, s_prev, s_curr, s_local_best);
 
 	// while loop uitvoeren op RELOCATE totdat er geen verbeteringen meer zijn
 	while (s_local_best.total_cost < s_prev.total_cost)
 	{ // while loop uitvoeren op RELOCATE totdat er geen verbeteringen meer zijn
-		update_solution(p, s_local_best, s_prev);
+		update_solution(s_local_best, s_prev);
 		relocate(p, s_prev, s_curr, s_local_best);
 		//TODO: Optimise all prints in a function or store them in files.
 		cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
@@ -209,8 +209,8 @@ int main(int argc, char *argv[])
 	//Update holder variables with the new results.
 	if (s_local_best.total_cost < s_total_best.total_cost)
 	{
-		update_solution(p, s_local_best, s_total_best);
-		update_solution(p, s_local_best, s_ILS_best);
+		update_solution(s_local_best, s_total_best);
+		update_solution(s_local_best, s_ILS_best);
 
 		cout << "total best " << s_total_best.total_cost << "\n";
 		//cout << "ILS best " << s_ILS_best.total_cost << "\n";
@@ -233,12 +233,12 @@ int main(int argc, char *argv[])
 	- The swap flow stops when there is no more improvments (note: current setup is considering only one relocation at a time)
 	*/
 	// Store the best solution as the previous best.
-	update_solution(p, s_local_best, s_prev);
+	update_solution(s_local_best, s_prev);
 	swap(p, s_prev, s_curr, s_local_best);
 	// while loop uitvoeren op SWAP totdat er geen verbeteringen meer zijn
 	while (s_local_best.total_cost < s_prev.total_cost)
 	{ // while loop uitvoeren op SWAP totdat er geen verbeteringen meer zijn
-		update_solution(p, s_local_best, s_prev);
+		update_solution(s_local_best, s_prev);
 		swap(p, s_prev, s_curr, s_local_best);
 
 		cout << "\nNew best solution after swap with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
@@ -258,8 +258,8 @@ int main(int argc, char *argv[])
 	//Update holder variables with the new results.
 	if (s_local_best.total_cost < s_total_best.total_cost)
 	{
-		update_solution(p, s_local_best, s_total_best);
-		update_solution(p, s_local_best, s_ILS_best);
+		update_solution(s_local_best, s_total_best);
+		update_solution(s_local_best, s_ILS_best);
 
 		cout << "total best " << s_total_best.total_cost << "\n";
 		cout << "ILS best " << s_ILS_best.total_cost << "\n";
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 	-----------------------
 	*/
 
-	update_solution(p, s_local_best, s_prev);
+	update_solution(s_local_best, s_prev);
 	relocate(p, s_prev, s_curr, s_local_best);
 
 	cout << "\nNew best solution after first relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
 
 	if (s_local_best.total_cost < s_total_best.total_cost)
 	{
-		update_solution(p, s_local_best, s_total_best);
+		update_solution(s_local_best, s_total_best);
 
 		cout << "total best " << s_total_best.total_cost << "\n";
 	}
@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
 	while (s_local_best.total_cost < s_prev.total_cost)
 	{ // while loop op RELOCATE uitvoeren totdat er geen verbeteringen meer zijn
 
-		update_solution(p, s_local_best, s_prev);
+		update_solution(s_local_best, s_prev);
 		relocate(p, s_prev, s_curr, s_local_best);
 
 		cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
@@ -320,8 +320,8 @@ int main(int argc, char *argv[])
 
 	if (s_local_best.total_cost < s_total_best.total_cost)
 	{ // moet dit hier ook telkens, of pas na de laatste relocate?
-		update_solution(p, s_local_best, s_total_best);
-		update_solution(p, s_local_best, s_ILS_best);
+		update_solution(s_local_best, s_total_best);
+		update_solution(s_local_best, s_ILS_best);
 
 		cout << "total best " << s_total_best.total_cost << "\n";
 		//cout << "ILS best " << s_ILS_best.total_cost << "\n";
@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
 	while (number_of_times_without_improvement < value_no_improvement)
 	{
 
-		update_solution(p, s_total_best, s_local_best);
+		update_solution(s_total_best, s_local_best);
 
 		vector<int> random_customers = {};
 
@@ -435,7 +435,7 @@ int main(int argc, char *argv[])
 
 		if (s_local_best.total_cost < s_total_best.total_cost)
 		{
-			update_solution(p, s_local_best, s_total_best);
+			update_solution(s_local_best, s_total_best);
 
 			cout << "total best " << s_total_best.total_cost << "\n";
 		}
@@ -450,7 +450,7 @@ int main(int argc, char *argv[])
 		START:  Relocate - Swap - Relocate flows after the insertion of removed customer
 		-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 		*/
-		update_solution(p, s_local_best, s_prev);
+		update_solution(s_local_best, s_prev);
 		relocate(p, s_prev, s_curr, s_local_best);
 
 		//cout << "\nNew best solution after first relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
@@ -465,7 +465,7 @@ int main(int argc, char *argv[])
 		//cout << "best cost na first relocate " << s_local_best.total_cost << "\n";
 
 		//if (s_local_best.total_cost < s_total_best.total_cost) {
-		//	update_solution(p, s_local_best, s_total_best);
+		//	update_solution(s_local_best, s_total_best);
 
 		//	cout << "total best " << s_total_best.total_cost << "\n";
 		//}
@@ -473,7 +473,7 @@ int main(int argc, char *argv[])
 		while (s_local_best.total_cost < s_prev.total_cost)
 		{ // while loop uitvoeren totdat er geen verbeteringen meer zijn
 
-			update_solution(p, s_local_best, s_prev);
+			update_solution(s_local_best, s_prev);
 			relocate(p, s_prev, s_curr, s_local_best);
 
 			cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
@@ -494,24 +494,24 @@ int main(int argc, char *argv[])
 
 		if (s_local_best.total_cost < s_total_best.total_cost)
 		{
-			update_solution(p, s_local_best, s_total_best);
+			update_solution(s_local_best, s_total_best);
 
 			cout << "total best " << s_total_best.total_cost << "\n";
 		}
 
 		if (s_local_best.total_cost < s_ILS_best.total_cost)
 		{
-			update_solution(p, s_local_best, s_ILS_best);
+			update_solution(s_local_best, s_ILS_best);
 
 			cout << "ILS best " << s_ILS_best.total_cost << "\n";
 		}
 
-		update_solution(p, s_local_best, s_prev);
+		update_solution(s_local_best, s_prev);
 		swap(p, s_prev, s_curr, s_local_best);
 
 		while (s_local_best.total_cost < s_prev.total_cost)
 		{
-			update_solution(p, s_local_best, s_prev);
+			update_solution(s_local_best, s_prev);
 			swap(p, s_prev, s_curr, s_local_best);
 
 			cout << "\nNew best solution after swap with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
@@ -532,19 +532,19 @@ int main(int argc, char *argv[])
 
 		if (s_local_best.total_cost < s_total_best.total_cost)
 		{
-			update_solution(p, s_local_best, s_total_best);
+			update_solution(s_local_best, s_total_best);
 
 			cout << "total best " << s_total_best.total_cost << "\n";
 		}
 
 		if (s_local_best.total_cost < s_ILS_best.total_cost)
 		{
-			update_solution(p, s_local_best, s_ILS_best);
+			update_solution(s_local_best, s_ILS_best);
 
 			cout << "ILS best " << s_ILS_best.total_cost << "\n";
 		}
 
-		update_solution(p, s_local_best, s_prev);
+		update_solution(s_local_best, s_prev);
 		relocate(p, s_prev, s_curr, s_local_best);
 
 		//cout << "\nNew best solution after first relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
@@ -559,7 +559,7 @@ int main(int argc, char *argv[])
 		//cout << "best cost na first relocate " << s_local_best.total_cost << "\n";
 
 		//if (s_local_best.total_cost < s_total_best.total_cost) {
-		//	update_solution(p, s_local_best, s_total_best);
+		//	update_solution(s_local_best, s_total_best);
 
 		//	cout << "total best " << s_total_best.total_cost << "\n";
 		//}
@@ -567,7 +567,7 @@ int main(int argc, char *argv[])
 		while (s_local_best.total_cost < s_prev.total_cost)
 		{ // while loop uitvoeren totdat er geen verbeteringen meer zijn
 
-			update_solution(p, s_local_best, s_prev);
+			update_solution(s_local_best, s_prev);
 			relocate(p, s_prev, s_curr, s_local_best);
 
 			cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
@@ -594,7 +594,7 @@ int main(int argc, char *argv[])
 		//FIXME: Is this ever going to be TRUE?! Related to lone 295
 		if (s_local_best.total_cost < s_total_best.total_cost)
 		{
-			update_solution(p, s_local_best, s_total_best);
+			update_solution(s_local_best, s_total_best);
 
 			cout << "total best " << s_total_best.total_cost << "\n";
 		}
@@ -606,7 +606,7 @@ int main(int argc, char *argv[])
 		//  Update the ILS best solution, if the (current) local_best cost is smaller than the ILS_best cost.
 		if (s_local_best.total_cost < s_ILS_best.total_cost)
 		{
-			update_solution(p, s_local_best, s_ILS_best);
+			update_solution(s_local_best, s_ILS_best);
 
 			cout << "ILS best " << s_ILS_best.total_cost << "\n";
 		}

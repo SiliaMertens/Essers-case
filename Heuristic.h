@@ -115,7 +115,7 @@ void read_distance_and_time_matrix(struct problem &p);
 
 /* Solution management functions */
 void initialize_solution(problem &p, solution &s);
-void update_solution(problem &p, solution &s1, solution &s2);
+void update_solution(solution &s1, solution &s2);
 
 void change_update_solution_vehicle(solution &s1, solution &s2, int vehicle1, int vehicle2);
 void position_removed_customers(problem &p, solution &s, int customer_id);
