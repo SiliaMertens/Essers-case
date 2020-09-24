@@ -630,8 +630,8 @@ int main(int argc, char *argv[])
 		cout << "Time taken to run the algorithm is: : " << duration.count() << " minutes" << endl;
 		cout << " ============ End of execution ======== (still waiting to write the results) "
 			 << "\n";
-
 		write_output_file(p, s_ILS_best);
 	}
+	write_csv_output(p, s_ILS_best);
 	return 0;
 }

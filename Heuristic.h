@@ -149,7 +149,6 @@ std::vector<double> probability_of_failure(problem &p, solution &s, int vehicle_
 
 /* Output */
 void write_output_file(problem &p, solution &s);
-//FIXME: Not implemented but defined.
-void write_output_file_perturbation(problem &p, solution &s);
+void write_csv_output(problem &p, solution &s);
 
 #endif

@@ -24,7 +24,7 @@ using namespace std;
 
 extern string data_file;
 extern string coordinates_file;
-
+extern string probability_resolution;
 void read_data(problem &p)
 {
 
@@ -1151,5 +1151,78 @@ void write_output_file(problem &p, solution &s)
 
 	output_file << endl
 				<< endl;
+	output_file.close();
+}
+
+void write_csv_output(problem &p, solution &s)
+{
+	fstream output_file;
+
+	// toevoegen: totale kost vlak voor perturbatie
+	std::string file_name = "csv_results_september.csv";
+	// Open file as Input to check if the file exist or not
+	output_file.open(file_name, std::ios::in);
+	if (!output_file.is_open())
+	{
+		//If the files as input could not open, then it does not exist.
+		//Try to make an output file with the name provided.
+		output_file.open(file_name, std::ios::out);
+		if (!output_file.is_open())
+		{
+			//If the system couldnot generate (create the file) and open it then there is a problem.
+			throw std::runtime_error("unable to open file: " + (file_name));
+		}
+		//If the ourput file could be created and opened.
+		//Put the header (only once when the file is just created)
+		output_file << "data_file,"
+					<< "collection_date,"
+					<< "coordinates_file,"
+					<< "probability_resolution,"
+					<< "TW_violation_cost,"
+					<< "operating_time_cost,"
+					<< "number_of_vehicles,"
+					<< "distance_cost,"
+					<< "distance_parameter,"
+					<< "route_duration,"
+					<< "route_duration_parameter,"
+					<< "time_window_violation,"
+					<< "time_window_violation_parameter,"
+					<< "overtime,"
+					<< "overtime_parameter,"
+					<< "allowable_operating_time,"
+					<< "allowable_operating_time_parameter,"
+					<< "total_cost,"
+					<< "\n";
+	}
+	//If the file as input could be opened, that means the file exist. 
+	//In this case, close the InputStream and start an appened stream instead.
+	else
+	{
+		output_file.close();
+		output_file.open(file_name, std::ios::app);
+		if (!output_file.is_open())
+		{
+			throw std::runtime_error("unable to open file: " + (file_name));
+		}
+	}
+	//Here the file will be exist and 
+	output_file << data_file << ","
+				<< p.collection_date << ","
+				<< coordinates_file << ","
+				<< probability_resolution << ","
+				<< time_window_violation_cost << ","
+				<< allowable_operating_time_cost << ","
+				<< s.number_of_vehicles_used << ","
+				<< s.total_distance_cost << ","
+				<< s.total_distance_parameter << ","
+				<< s.total_route_duration << ","
+				<< s.total_route_duration_parameter << ","
+				<< s.total_time_window_violation << ","
+				<< s.total_time_window_violation_parameter << ","
+				<< s.total_overtime << ","
+				<< s.total_overtime_parameter << ","
+				<< s.total_driving_time << ","
+				<< s.total_driving_time_parameter << ","
+				<< s.total_cost << "\n";
 	output_file.close();
 }
