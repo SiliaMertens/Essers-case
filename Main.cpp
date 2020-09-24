@@ -42,7 +42,7 @@ string coordinates_file; // = "distance_matrix10klanten.txt";
 
 double time_window_violation_cost;	  // = 10;
 double allowable_operating_time_cost; // = 1000;
-int probability_resolution;
+string probability_resolution;
 /* Main function to run the algorithm */
 int main(int argc, char *argv[])
 {
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 			coordinates_file = argv[3];
 			time_window_violation_cost = stod(argv[4]);
 			allowable_operating_time_cost = stod(argv[5]);
-			probability_resolution = stoi(argv[6]);
+			probability_resolution = argv[6];
 		}
 		catch (const std::exception &e)
 		{
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 	read_data(p);
 	read_distance_and_time_matrix(p);
 
-	p.pe.readDistributions(p.collection_date); // read probabilities of 'p.collection_date'
+	p.pe.readDistributions(p.collection_date, probability_resolution); // read probabilities of 'p.collection_date'
 
 	struct solution s_curr;
 	struct solution s_prev;

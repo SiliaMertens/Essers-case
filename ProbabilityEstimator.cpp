@@ -110,7 +110,7 @@ std::vector<std::vector<double>> ProbabilityEstimator::getEmpricialDistributions
     return resultDistros;
 }
 //will replace the above...
-void ProbabilityEstimator::readDistributions(const std::string &collection_date)
+void ProbabilityEstimator::readDistributions(const std::string &collection_date, const std::string &probabilityResolution)
 {
 
     std::cout << "Read distributions (will replace the above) \n";
@@ -121,7 +121,7 @@ void ProbabilityEstimator::readDistributions(const std::string &collection_date)
     std::vector<double> cDist;
     std::string line, key, value;
     // Open an existing file of a specific date.
-    fin.open(collection_date + ".csv", std::ios::in);
+    fin.open(collection_date + "_" + probabilityResolution + ".csv", std::ios::in);
     if (fin.is_open())
     {
         // read an entire row and store it in a string variable 'line'
@@ -151,7 +151,7 @@ void ProbabilityEstimator::readDistributions(const std::string &collection_date)
     }
     else
     {
-        throw std::runtime_error("Failed to read file '" + collection_date + ".csv" + "'\n");
+        throw std::runtime_error("Failed to read file '" + collection_date + "_" + probabilityResolution + ".csv" + "'\n");
     }
     fin.close();
 }
