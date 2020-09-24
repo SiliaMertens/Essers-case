@@ -33,7 +33,8 @@ void show_usage(std::string name)
 			  << "\tcoordinates_file: A text file representing an adjacency matrix of nodes. E.g. distance_matrix3sep.txt\n"
 			  << "\ttime_window_violation_cost: A double number. E.g. 0.5\n"
 			  << "\tallowable_operating_time_cost: A double number. E.g. 1000\n"
-			  << "\tnumber_of_bins: An integer number representing the resolution of the probability estimator. E.g. 10"
+			  << "\tnumber_of_bins: An integer number representing the resolution of the probability estimator. E.g. 10\n"
+              << "Example: "<<name<<" General_Cargo_LTL_2018_v10072019_input_code\\ adjusted\\ tw.txt 2-Jan-2018 distance_matrix\\ 2\\ jan.txt 0.5 1000 10"
 			  << std::endl;
 }
 // "General_Cargo_LTL_2018_v10072019_input_code adjusted tw.txt" "2-Jan-2018" "distance_matrix 2 jan.txt" 10 1000 10
