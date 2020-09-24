@@ -20,10 +20,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # -DDEBUG (is a composition of -D DEBUG): to define a macro named DEBUG (to be used later with `ifdef DEBUG` do something)
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   # using Clang 
-  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g -O3 -Wall -Wpedantic -Wextra -DDEBUG")
+  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g -O3 -Wall -Wpedantic -Wextra -Wno-sign-compare -DDEBUG")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   # using GCC
-  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g -O3 -Wall -Wpedantic -Wextra -DDEBUG")
+  set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -g -O3 -Wall -Wpedantic -Wextra -Wno-sign-compare -DDEBUG")
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   # using Visual Studio C++
   set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} /O2 /Wall /Zi /DEBUG /DDEBUG")
