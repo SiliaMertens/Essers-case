@@ -304,9 +304,9 @@ void bereken_route_cost_zonder_recourse(problem &p, solution &s, int vehicle_id)
 		double temp_distance_param = p.distance_matrix[s.routes[vehicle_id].route[i]][s.routes[vehicle_id].route[i + 1]];
 		s.routes[vehicle_id].distance_cost += temp_distance_param * km_cost;
 		s.routes[vehicle_id].distance_parameter += temp_distance_param;
-
-		s.routes[vehicle_id].route_cost += s.routes[vehicle_id].distance_cost;
 	}
+	
+	s.routes[vehicle_id].route_cost += s.routes[vehicle_id].distance_cost;
 
 	s.routes[vehicle_id].schedule.resize(s.routes[vehicle_id].route.size());
 
@@ -355,16 +355,18 @@ void bereken_route_cost(problem &p, solution &s, int vehicle_id)
 		double temp_distance_parameter = p.distance_matrix[s.routes[vehicle_id].route[i]][s.routes[vehicle_id].route[i + 1]];
 		s.routes[vehicle_id].distance_cost += temp_distance_parameter * km_cost;
 		s.routes[vehicle_id].distance_parameter += temp_distance_parameter;
-		s.routes[vehicle_id].route_cost += s.routes[vehicle_id].distance_cost;
 
 		s.routes[vehicle_id].operating_time += p.time_matrix[s.routes[vehicle_id].route[i]][s.routes[vehicle_id].route[i + 1]];
-		if (s.routes[vehicle_id].operating_time > p.max_operating_time)
-		{
-			double current_operating_time = s.routes[vehicle_id].operating_time - p.max_operating_time;
-			s.routes[vehicle_id].driving_time = current_operating_time * allowable_operating_time_cost;
-			s.routes[vehicle_id].driving_time_parameter = current_operating_time;
-			s.routes[vehicle_id].route_cost += s.routes[vehicle_id].driving_time;
-		}
+	}
+	
+	s.routes[vehicle_id].route_cost += s.routes[vehicle_id].distance_cost;
+	
+	if (s.routes[vehicle_id].operating_time > p.max_operating_time)
+	{
+		double current_operating_time = s.routes[vehicle_id].operating_time - p.max_operating_time;
+		s.routes[vehicle_id].driving_time = current_operating_time * allowable_operating_time_cost;
+		s.routes[vehicle_id].driving_time_parameter = current_operating_time;
+		s.routes[vehicle_id].route_cost += s.routes[vehicle_id].driving_time;
 	}
 
 	s.routes[vehicle_id].schedule.resize(s.routes[vehicle_id].route.size());
