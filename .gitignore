@@ -37,3 +37,5 @@
 data_essers/
 .vscode/
 build/
+*.vs
+CMakeSettings.json
