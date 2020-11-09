@@ -10,9 +10,11 @@
 
 #include "ProbabilityEstimator.h"
 #include "Heuristic.h"
-
+#include "GaussianDistribution.h"
+#include "DiscreteDistribution.h"
 using namespace std;
-
+//A macro definition for the string gaussian for quick access
+#define GAUSSIAN "gaussian"
 void show(vector<int> const &input)
 {
 	cout << "shuffle ";
@@ -33,8 +35,8 @@ void show_usage(std::string name)
 			  << "\tcoordinates_file: A text file representing an adjacency matrix of nodes. E.g. distance_matrix3sep.txt\n"
 			  << "\ttime_window_violation_cost: A double number. E.g. 0.5\n"
 			  << "\tallowable_operating_time_cost: A double number. E.g. 1000\n"
-			  << "\tnumber_of_bins: An integer number representing the resolution of the probability estimator. E.g. 10\n"
-              << "Example: "<<name<<" General_Cargo_LTL_2018_v10072019_input_code\\ adjusted\\ tw.txt 2-Jan-2018 distance_matrix\\ 2\\ jan.txt 0.5 1000 10"
+			  << "\tresolution: A string or an integer number representing the resolution of the probability estimator. E.g. gaussian for GaussianDistribution OR 14 for DiscreteDistribution\n"
+			  << "Example: " << name << " General_Cargo_LTL_2018_v10072019_input_code\\ adjusted\\ tw.txt 2-Jan-2018 distance_matrix\\ 2\\ jan.txt 0.5 1000 14"
 			  << std::endl;
 }
 // "General_Cargo_LTL_2018_v10072019_input_code adjusted tw.txt" "2-Jan-2018" "distance_matrix 2 jan.txt" 10 1000 10
@@ -43,7 +45,7 @@ string coordinates_file; // = "distance_matrix10klanten.txt";
 
 double time_window_violation_cost;	  // = 10;
 double allowable_operating_time_cost; // = 1000;
-string probability_resolution;
+string resolution;
 /* Main function to run the algorithm */
 int main(int argc, char *argv[])
 {
@@ -83,7 +85,16 @@ int main(int argc, char *argv[])
 			coordinates_file = argv[3];
 			time_window_violation_cost = stod(argv[4]);
 			allowable_operating_time_cost = stod(argv[5]);
-			probability_resolution = argv[6];
+			resolution = argv[6];
+			if (resolution == GAUSSIAN)
+			{
+				cout << "Initial solution with " << resolution << "\n";
+				p.pe = new GaussianDistribution();
+			}
+			else
+			{
+				p.pe = new DiscreteDistribution();
+			}
 		}
 		catch (const std::exception &e)
 		{
@@ -96,7 +107,7 @@ int main(int argc, char *argv[])
 	read_data(p);
 	read_distance_and_time_matrix(p);
 
-	p.pe.readDistributions(p.collection_date, probability_resolution); // read probabilities of 'p.collection_date'
+	p.pe->readDistributions(p.collection_date, resolution); // read probabilities of 'p.collection_date'
 
 	struct solution s_curr;
 	struct solution s_prev;

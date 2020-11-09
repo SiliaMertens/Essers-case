@@ -24,7 +24,7 @@ using namespace std;
 
 extern string data_file;
 extern string coordinates_file;
-extern string probability_resolution;
+extern string resolution;
 void read_data(problem &p)
 {
 
@@ -1003,8 +1003,8 @@ vector<double> probability_of_failure(problem &p, solution &s, int vehicle_id)
 		// {
 		// 	cout << " original route: " << s.routes[vehicle_id].route[i] << endl;
 		// }
-		std::vector<std::vector<double>> emplDists = p.pe.getEmpricialDistributions(customersIDs);
-		vector<double> jointCdfRes = p.pe.jointCDF(emplDists);
+		std::vector<std::vector<double>> emplDists = p.pe->getEmpricialDistributions(customersIDs);
+		vector<double> jointCdfRes = p.pe->jointCDF(emplDists);
 		failure.insert(failure.end(), jointCdfRes.begin(), jointCdfRes.end());
 		// End with 0 for depot point.
 		failure.push_back(0.0);
@@ -1179,7 +1179,7 @@ void write_csv_output(problem &p, solution &s)
 		output_file << "data_file,"
 					<< "collection_date,"
 					<< "coordinates_file,"
-					<< "probability_resolution,"
+					<< "resolution,"
 					<< "TW_violation_cost,"
 					<< "operating_time_cost,"
 					<< "number_of_vehicles,"
@@ -1211,7 +1211,7 @@ void write_csv_output(problem &p, solution &s)
 	output_file << data_file << ","
 				<< p.collection_date << ","
 				<< coordinates_file << ","
-				<< probability_resolution << ","
+				<< resolution << ","
 				<< time_window_violation_cost << ","
 				<< allowable_operating_time_cost << ","
 				<< s.number_of_vehicles_used << ","

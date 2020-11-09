@@ -53,7 +53,7 @@ struct problem
 	int max_route_duration;
 	std::vector<std::vector<double>> distance_matrix;
 	std::vector<std::vector<double>> time_matrix;
-	ProbabilityEstimator pe;
+	ProbabilityEstimator* pe;
 };
 struct route
 {

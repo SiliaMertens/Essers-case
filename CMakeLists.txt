@@ -30,7 +30,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 
 # add the executable
-add_executable(Heuristic Main.cpp Heuristic.cpp ProbabilityEstimator.cpp)
+add_executable(Heuristic Main.cpp Heuristic.cpp ProbabilityEstimator.cpp GaussianDistribution.cpp DiscreteDistribution.cpp)
 
 # In case installing as executable is needed
 #Uncomment the following line, then after building do  "cd build && make install"

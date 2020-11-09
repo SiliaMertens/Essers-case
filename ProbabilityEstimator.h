@@ -1,21 +1,19 @@
 // To Avoid adding/defining multiple headers of the same concept.
 #ifndef PROBABILITY_OF_FAILURE_H
 #define PROBABILITY_OF_FAILURE_H
-#include <map>
 
 class ProbabilityEstimator
 {
-private:
+protected:
     std::vector<std::vector<double>> currCollDateVector;
-    double accumulateResult(const std::vector<double> &probabDist);
-    double convolution(int v, const std::vector<double> &probabDistOne, const std::vector<double> &probabDistTwo);
-    std::vector<double> cdf(const std::vector<double> &probabDistOne, const std::vector<double> &probabDistTwo);
+    virtual inline double accumulateResult(const std::vector<double> &dist) = 0;
 
 public:
-    ProbabilityEstimator(){};
-    std::vector<double> jointCDF(const std::vector<std::vector<double>> &empricialDistros);
+    virtual ~ProbabilityEstimator() {};
+    virtual std::vector<double> jointCDF(const std::vector<std::vector<double>> &empricialDists) = 0;
     std::vector<std::vector<double>> getEmpricialDistributions(std::vector<int> &clientsIDs);
-    void readDistributions(const std::string &collection_date, const std::string &probabilityResolution);
+    void readDistributions(const std::string &collection_date, const std::string &resolution);
+    virtual std::string classname() = 0;
 };
 
 #endif /* PROBABILITY_OF_FAILURE_H */
