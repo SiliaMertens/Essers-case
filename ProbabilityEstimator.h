@@ -6,7 +6,6 @@ class ProbabilityEstimator
 {
 protected:
     std::vector<std::vector<double>> currCollDateVector;
-    virtual inline double accumulateResult(const std::vector<double> &dist) = 0;
 
 public:
     virtual ~ProbabilityEstimator() {};

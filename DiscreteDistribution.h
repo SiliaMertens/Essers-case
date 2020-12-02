@@ -9,7 +9,7 @@ private:
     std::vector<double> cdf(const std::vector<double> &probabDistOne, const std::vector<double> &probabDistTwo);
 
 protected:
-    inline double accumulateResult(const std::vector<double> &dist) override;
+    inline double accumulateResult(const std::vector<double> &dist);
 
 public:
     DiscreteDistribution(){};

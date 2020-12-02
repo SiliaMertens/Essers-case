@@ -9,7 +9,7 @@ private:
     inline double cdf(double x, double mu, double sigma);
     std::vector<double> jointGaussian(const std::vector<double> &distOne, const std::vector<double> &distTwo);
 protected:
-    inline double accumulateResult(const std::vector<double> &dist) override;
+    inline double accumulateResult(const std::vector<double> &dist);
 public:
     // default constructor
     GaussianDistribution();
