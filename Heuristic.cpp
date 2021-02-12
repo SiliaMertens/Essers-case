@@ -25,6 +25,7 @@ using namespace std;
 extern string data_file;
 extern string coordinates_file;
 extern string resolution;
+
 void read_data(problem &p)
 {
 
@@ -43,20 +44,20 @@ void read_data(problem &p)
 	string street, town;
 	int lower_tw, upper_tw, service_dur;
 	string flow_of_goods, transport_type;
-	double demand;
+	double specified_demand, actual_demand;
 	int index_count = 1;
 	bool is_collection_date_visited = false;
 
 	p.n_customers = 0;
 
-	infile >> p.n_vehicles >> p.vehicle_cap >> p.max_operating_time >> p.max_route_duration;
+	infile >> p.n_vehicles >> p.vehicle_cap >> p.max_driving_time >> p.max_route_duration;
 
 	cout << "vehicles " << p.n_vehicles << "\n";
 	node current_node;
 
 	//TODO: Check if the depot.order_nr is correct and needed?!! Also the demand, lower_tw, upper_tw, service_dur
 	infile >> current_node.depot_country // depot information
-		>> current_node.depot_postal_code >> current_node.depot_street >> current_node.depot_town >> current_node.order_nr >> current_node.demand >> current_node.lower_tw >> current_node.upper_tw >> current_node.service_dur;
+		>> current_node.depot_postal_code >> current_node.depot_street >> current_node.depot_town >> current_node.order_nr >> current_node.specified_demand >> current_node.actual_demand >> current_node.lower_tw >> current_node.upper_tw >> current_node.service_dur;
 	//Push the depot node in the vector
 	p.nodes.push_back(current_node);
 
@@ -73,7 +74,7 @@ void read_data(problem &p)
 				//Reset the current_node variable to be assigned new values
 				current_node = {};
 				//Get the rest of the data.
-				sstrm >> unit_description >> delivery_date >> order_nr >> high_sec_indicator >> temp_indicator >> ADR_indicator >> relation_nr >> country >> postal_code >> street >> town >> lower_tw >> upper_tw >> flow_of_goods >> transport_type >> demand >> service_dur;
+				sstrm >> unit_description >> delivery_date >> order_nr >> high_sec_indicator >> temp_indicator >> ADR_indicator >> relation_nr >> country >> postal_code >> street >> town >> lower_tw >> upper_tw >> flow_of_goods >> transport_type >> specified_demand >> actual_demand >> service_dur;
 
 				// here the collection date is selected which you will use to run the algorithm. The variables are put in the struct.
 
@@ -93,8 +94,14 @@ void read_data(problem &p)
 				current_node.upper_tw = upper_tw;
 				current_node.flow_of_goods = flow_of_goods;
 				current_node.transport_type = transport_type;
-				current_node.demand = demand;
+				current_node.specified_demand = specified_demand;
+				current_node.actual_demand = actual_demand;
 				current_node.service_dur = service_dur;
+
+				
+				//cout << "collection date " << current_node.collection_date << "\n";
+				//cout << "unit description " << current_node.unit_description << "\n";
+				//cout << "delivery date " << current_node.delivery_date << "\n";
 
 				//Temprary counter for the index. Hence, p.n_customers can also be used (i.e. they are both the same increment).
 
@@ -104,6 +111,7 @@ void read_data(problem &p)
 				// To break later if other day is reached.
 				is_collection_date_visited = true;
 				p.n_customers++; // the number of customers that are present in one day is calculated here
+
 			}
 			catch (const std::exception &e)
 			{
@@ -147,6 +155,7 @@ void read_distance_and_time_matrix(problem &p)
 	{
 		throw std::runtime_error("unable to open file: " + coordinates_file);
 	}
+
 	vector<double> current_distance_vector;
 	vector<double> current_time_vector;
 	string line;
@@ -165,15 +174,23 @@ void read_distance_and_time_matrix(problem &p)
 			current_time_vector.clear();
 			curr_a = a;
 		}
+
 		current_distance_vector.push_back(a_b_distance);
 		current_time_vector.push_back(a_b_time);
+
+		for (int i = 0; i < current_distance_vector.size(); i++) {
+			/*cout << "distance " << current_distance_vector[i] << "\n";*/
+		}
 	}
+
+
 	// To add the last vecotr as there are no new line to check curr_a == a (last node with all relations to other ndoes)
 	p.distance_matrix.emplace_back(current_distance_vector);
 	current_distance_vector.clear();
 	p.time_matrix.emplace_back(current_time_vector);
 	current_time_vector.clear();
 	infile.close();
+
 }
 
 void initialize_solution(problem &p, solution &s)
@@ -189,8 +206,8 @@ void initialize_solution(problem &p, solution &s)
 	s.total_time_window_violation_parameter = 0.0;
 	s.total_overtime = 0.0;
 	s.total_overtime_parameter = 0.0;
-	s.total_driving_time = 0.0;
-	s.total_driving_time_parameter = 0.0;
+	s.total_driving_time_violation = 0.0;
+	s.total_driving_time_violation_parameter = 0.0;
 	s.total_cost = 0.0;
 	s.route_customer = {};
 	s.position_customer = {};
@@ -200,12 +217,13 @@ void initialize_solution(problem &p, solution &s)
 	route route_instance;
 	route_instance.route = {0, 0};
 	route_instance.load = {0, 0};
+	//route_instance.load_actualdemand = { 0, 0 };
 	route_instance.earliest_time = {p.nodes[0].lower_tw, p.nodes[0].lower_tw};
 	route_instance.latest_time = {p.nodes[p.n_nodes - 1].upper_tw, p.nodes[p.n_nodes - 1].upper_tw};
 	route_instance.schedule = {0, 0};
 	route_instance.distance_cost = 0.0;
 	route_instance.distance_parameter = 0.0;
-	route_instance.operating_time = 0.0;
+	route_instance.driving_time = 0.0;
 	route_instance.route_used = 0;
 	route_instance.route_duration = 0.0;
 	route_instance.route_duration_parameter = 0.0;
@@ -213,8 +231,8 @@ void initialize_solution(problem &p, solution &s)
 	route_instance.time_window_violation_parameter = 0.0;
 	route_instance.overtime = 0.0;
 	route_instance.overtime_parameter = 0.0;
-	route_instance.driving_time = 0.0;
-	route_instance.driving_time_parameter = 0.0;
+	route_instance.driving_time_violation = 0.0;
+	route_instance.driving_time_violation_parameter = 0.0;
 	route_instance.route_cost = 0.0;
 	route_instance.weighted_route_cost = 0.0;
 	route_instance.weighted_distance_cost = 0.0;
@@ -225,8 +243,8 @@ void initialize_solution(problem &p, solution &s)
 	route_instance.weighted_time_window_violation_parameter = 0.0;
 	route_instance.weighted_overtime = 0.0;
 	route_instance.weighted_overtime_parameter = 0.0;
-	route_instance.weighted_driving_time = 0.0;
-	route_instance.weighted_driving_time_parameter = 0.0;
+	route_instance.weighted_driving_time_violation = 0.0;
+	route_instance.weighted_driving_time_violation_parameter = 0.0;
 	route_instance.departure_time = 0.0;
 
 	//Initialise (bootstrap) the s.routes through assign operator
@@ -237,7 +255,6 @@ void initialize_solution(problem &p, solution &s)
 //REFACTOR: Try memcpy or copy-constructors (i.e. change solution to a class)
 void update_solution(solution &s1, solution &s2)
 {
-
 	s2.total_distance_cost = s1.total_distance_cost;
 	s2.total_distance_parameter = s1.total_distance_parameter;
 	s2.number_of_vehicles_used = s1.number_of_vehicles_used;
@@ -247,11 +264,12 @@ void update_solution(solution &s1, solution &s2)
 	s2.total_time_window_violation_parameter = s1.total_time_window_violation_parameter;
 	s2.total_overtime = s1.total_overtime;
 	s2.total_overtime_parameter = s1.total_overtime_parameter;
-	s2.total_driving_time = s1.total_driving_time;
-	s2.total_driving_time_parameter = s1.total_driving_time_parameter;
+	s2.total_driving_time_violation = s1.total_driving_time_violation;
+	s2.total_driving_time_violation_parameter = s1.total_driving_time_violation_parameter;
 	s2.total_cost = s1.total_cost;
 	//Vector to vector copy c++11 (copy & move semantics)
 	s2.routes = s1.routes;
+
 }
 
 void change_update_solution_vehicle(solution &s1, solution &s2, int vehicle1, int vehicle2)
@@ -356,17 +374,17 @@ void bereken_route_cost(problem &p, solution &s, int vehicle_id)
 		s.routes[vehicle_id].distance_cost += temp_distance_parameter * km_cost;
 		s.routes[vehicle_id].distance_parameter += temp_distance_parameter;
 
-		s.routes[vehicle_id].operating_time += p.time_matrix[s.routes[vehicle_id].route[i]][s.routes[vehicle_id].route[i + 1]];
+		s.routes[vehicle_id].driving_time += p.time_matrix[s.routes[vehicle_id].route[i]][s.routes[vehicle_id].route[i + 1]];
 	}
 	
 	s.routes[vehicle_id].route_cost += s.routes[vehicle_id].distance_cost;
 	
-	if (s.routes[vehicle_id].operating_time > p.max_operating_time)
+	if (s.routes[vehicle_id].driving_time > p.max_driving_time)
 	{
-		double current_operating_time = s.routes[vehicle_id].operating_time - p.max_operating_time;
-		s.routes[vehicle_id].driving_time = current_operating_time * allowable_operating_time_cost;
-		s.routes[vehicle_id].driving_time_parameter = current_operating_time;
-		s.routes[vehicle_id].route_cost += s.routes[vehicle_id].driving_time;
+		double current_driving_time_violation = s.routes[vehicle_id].driving_time - p.max_driving_time;
+		s.routes[vehicle_id].driving_time_violation = current_driving_time_violation * driving_time_violation_cost;
+		s.routes[vehicle_id].driving_time_violation_parameter = current_driving_time_violation;
+		s.routes[vehicle_id].route_cost += s.routes[vehicle_id].driving_time_violation;
 	}
 
 	s.routes[vehicle_id].schedule.resize(s.routes[vehicle_id].route.size());
@@ -498,8 +516,8 @@ void bereken_gewogen_route_cost(problem &p, solution &s1, solution &s2, int vehi
 	s1.routes[vehicle_id].weighted_time_window_violation_parameter = 0.0;
 	s1.routes[vehicle_id].weighted_overtime = 0.0;
 	s1.routes[vehicle_id].weighted_overtime_parameter = 0.0;
-	s1.routes[vehicle_id].weighted_driving_time = 0.0;
-	s1.routes[vehicle_id].weighted_driving_time_parameter = 0.0;
+	s1.routes[vehicle_id].weighted_driving_time_violation = 0.0;
+	s1.routes[vehicle_id].weighted_driving_time_violation_parameter = 0.0;
 	s1.routes[vehicle_id].route_used = 0;
 	violation_risk = calculate_probabilities(p, s1, vehicle_id);
 
@@ -525,8 +543,8 @@ void bereken_gewogen_route_cost(problem &p, solution &s1, solution &s2, int vehi
 		s1.routes[vehicle_id].weighted_time_window_violation_parameter += s2.routes[vehicle_id].time_window_violation_parameter * violation_risk[index + 1];
 		s1.routes[vehicle_id].weighted_overtime += s2.routes[vehicle_id].overtime * violation_risk[index + 1];
 		s1.routes[vehicle_id].weighted_overtime_parameter += s2.routes[vehicle_id].overtime_parameter * violation_risk[index + 1];
-		s1.routes[vehicle_id].weighted_driving_time += s2.routes[vehicle_id].driving_time * violation_risk[index + 1];
-		s1.routes[vehicle_id].weighted_driving_time_parameter += s2.routes[vehicle_id].driving_time_parameter * violation_risk[index + 1];
+		s1.routes[vehicle_id].weighted_driving_time_violation += s2.routes[vehicle_id].driving_time_violation * violation_risk[index + 1];
+		s1.routes[vehicle_id].weighted_driving_time_violation_parameter += s2.routes[vehicle_id].driving_time_violation_parameter * violation_risk[index + 1];
 	}
 }
 
@@ -543,8 +561,8 @@ void calculate_total_cost(problem &p, solution &s)
 	s.total_time_window_violation_parameter = 0.0;
 	s.total_overtime = 0.0;
 	s.total_overtime_parameter = 0.0;
-	s.total_driving_time = 0.0;
-	s.total_driving_time_parameter = 0.0;
+	s.total_driving_time_violation = 0.0;
+	s.total_driving_time_violation_parameter = 0.0;
 
 	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 	{
@@ -558,8 +576,8 @@ void calculate_total_cost(problem &p, solution &s)
 		s.total_time_window_violation_parameter += s.routes[vehicle_id].weighted_time_window_violation_parameter;
 		s.total_overtime += s.routes[vehicle_id].weighted_overtime;
 		s.total_overtime_parameter += s.routes[vehicle_id].weighted_overtime_parameter;
-		s.total_driving_time += s.routes[vehicle_id].weighted_driving_time;
-		s.total_driving_time_parameter += s.routes[vehicle_id].weighted_driving_time_parameter;
+		s.total_driving_time_violation += s.routes[vehicle_id].weighted_driving_time_violation;
+		s.total_driving_time_violation_parameter += s.routes[vehicle_id].weighted_driving_time_violation_parameter;
 	}
 
 	//cout << "totale afstand: " << s.total_distance_cost << "\n";
@@ -753,7 +771,7 @@ void remove_customer(problem &p, solution &s, int vehicle_id, int position)
 
 void insert_customer(problem &p, solution &s, int customer_id, int vehicle_id, int position)
 {
-
+	//cout << "customer id " << customer_id << " vehicle id " << vehicle_id << " position " << position << "\n";
 	s.routes[vehicle_id].route.insert(s.routes[vehicle_id].route.begin() + position, customer_id);
 
 	update_load(p, s, vehicle_id);
@@ -886,6 +904,7 @@ void perform_best_insertion(problem &p, solution &s, int customer_id)
 
 	//cout << "Customer id perform best insertion " << customer_id << "\n";
 
+	s.possible_insertion = 1;
 	double best_cost = DBL_MAX;
 	int best_vehicle_id = -1;
 	int best_position = -1;
@@ -898,6 +917,7 @@ void perform_best_insertion(problem &p, solution &s, int customer_id)
 	struct solution s_recourse;
 	initialize_solution(p, s_recourse);
 
+	
 	/* Check all insertion positions in all vehicles */
 	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 	{
@@ -963,16 +983,25 @@ void perform_best_insertion(problem &p, solution &s, int customer_id)
 			/*cout << "removed customer " << customer_id << " vehicle " << vehicle_id << " position " << position << " cost " << s_try.total_cost << "\n"; */
 		}
 	}
-	//cout << "best position (2) " << best_position << "\n";
-	//cout << "best vehicle id (2) " << best_vehicle_id << "\n";
-	insert_customer(p, s, customer_id, best_vehicle_id, best_position);
 
-	//update_solution(p, s, s_recourse);
+	if (best_vehicle_id == -1 && best_position == -1) {
+		s.possible_insertion = 0;
+	}
 
-	bereken_gewogen_route_cost(p, s, s_recourse, best_vehicle_id);
-	calculate_total_cost(p, s);
+	else {
+		//cout << "best position (2) " << best_position << "\n";
+		//cout << "best vehicle id (2) " << best_vehicle_id << "\n";
+		insert_customer(p, s, customer_id, best_vehicle_id, best_position);
 
-	//cout << "best customer " << customer_id << " vehicle " << best_vehicle_id << " position " << best_position << " cost " << best_cost << "\n";
+		//update_solution(p, s, s_recourse);
+
+		bereken_gewogen_route_cost(p, s, s_recourse, best_vehicle_id);
+		calculate_total_cost(p, s);
+
+		s.possible_insertion = 1;
+		//cout << "best customer " << customer_id << " vehicle " << best_vehicle_id << " position " << best_position << " cost " << best_cost << "\n";
+	}
+
 }
 
 vector<double> probability_of_failure(problem &p, solution &s, int vehicle_id)
@@ -1013,6 +1042,99 @@ vector<double> probability_of_failure(problem &p, solution &s, int vehicle_id)
 	return failure;
 }
 
+int position_failure(problem& p, solution& s, int vehicle_id) {
+
+
+	//update_load(p, s, vehicle_id);
+
+	s.routes[vehicle_id].load_actualdemand.resize(s.routes[vehicle_id].route.size());
+
+	s.routes[vehicle_id].load_actualdemand[0] = 0;
+
+	cout << "ROUTE ";
+	for (size_t position = 0; position < s.routes[vehicle_id].route.size(); position++) {
+		cout << s.routes[vehicle_id].route[position] << " ";
+	}
+
+	cout << "\n";
+
+	for (size_t position = 1; position < s.routes[vehicle_id].route.size(); position++) {
+
+		s.routes[vehicle_id].load_actualdemand[position] = s.routes[vehicle_id].load_actualdemand[position - 1] + p.nodes[s.routes[vehicle_id].route[position]].actual_demand;
+
+		//cout << "position " << position << " load actual demand " << s.routes[vehicle_id].load_actualdemand[position] << "\n";
+
+		if (s.routes[vehicle_id].load_actualdemand[position] > p.vehicle_cap) {
+
+			//cout << "position failure " << position << "\n";
+			s.position_failure = position;
+			//cout << "s.position failure " << s.position_failure << "\n";
+			return s.position_failure;
+
+		}
+
+	}
+
+	//cout << "no failure";
+	//cout << "\n";
+
+	return -1;
+
+}
+
+void actual_demand(problem& p, solution& s, int vehicle_id) {
+
+	if (position_failure(p, s, vehicle_id) == -1) {
+		bereken_route_cost_zonder_recourse(p, s, vehicle_id);
+
+		//cout << "route cost " << s.routes[vehicle_id].route_cost << "\n";
+	}
+
+	else if (position_failure(p, s, vehicle_id) == s.position_failure) {
+
+		construct_failure_routes(p, s, s, vehicle_id, s.position_failure);
+		bereken_route_cost(p, s, vehicle_id);
+
+	}
+
+
+}
+
+void calculate_total_cost_actualdemand(problem& p, solution& s) {
+
+	s.total_cost = 0.0;
+	s.total_distance_cost = 0.0;
+	s.total_distance_parameter = 0.0;
+	s.number_of_vehicles_used = 0;
+	s.total_route_duration = 0.0;
+	s.total_route_duration_parameter = 0.0;
+	s.total_time_window_violation = 0.0;
+	s.total_time_window_violation_parameter = 0.0;
+	s.total_overtime = 0.0;
+	s.total_overtime_parameter = 0.0;
+	s.total_driving_time_violation = 0.0;
+	s.total_driving_time_violation_parameter = 0.0;
+
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+		s.total_cost += s.routes[vehicle_id].route_cost;
+		s.total_distance_cost += s.routes[vehicle_id].distance_cost;
+		s.total_distance_parameter += s.routes[vehicle_id].distance_parameter;
+		s.number_of_vehicles_used += s.routes[vehicle_id].route_used;
+		s.total_route_duration += s.routes[vehicle_id].route_duration;
+		s.total_route_duration_parameter += s.routes[vehicle_id].route_duration_parameter;
+		s.total_time_window_violation += s.routes[vehicle_id].time_window_violation;
+		s.total_time_window_violation_parameter += s.routes[vehicle_id].time_window_violation_parameter;
+		s.total_overtime += s.routes[vehicle_id].overtime;
+		s.total_overtime_parameter += s.routes[vehicle_id].overtime_parameter;
+		s.total_driving_time_violation += s.routes[vehicle_id].driving_time_violation;
+		s.total_driving_time_violation_parameter += s.routes[vehicle_id].driving_time_violation_parameter;
+
+	}
+
+	//cout << "totale afstand: " << s.total_distance_cost << "\n";
+	//cout << "overtime " << s.total_overtime << "\n";
+}
+
 bool check_load(problem &p, solution &s, int vehicle_id)
 {
 
@@ -1051,7 +1173,7 @@ void update_load(problem &p, solution &s, int vehicle_id)
 
 	for (int position = 1; position < s.routes[vehicle_id].route.size(); position++)
 	{
-		s.routes[vehicle_id].load[position] = s.routes[vehicle_id].load[position - 1] + p.nodes[s.routes[vehicle_id].route[position]].demand;
+		s.routes[vehicle_id].load[position] = s.routes[vehicle_id].load[position - 1] + p.nodes[s.routes[vehicle_id].route[position]].specified_demand;
 	}
 }
 
@@ -1118,17 +1240,18 @@ void write_output_file(problem &p, solution &s)
 
 	// toevoegen: totale kost vlak voor perturbatie
 
-	output_file.open(("Results " + data_file + " day " + p.collection_date + " coordinates file " + coordinates_file + ".txt"), std::ios_base::app);
+	output_file.open(("Results " + data_file + " day " + p.collection_date + " coordinates file " + coordinates_file  + ".txt"), std::ios_base::app);
 	if (!output_file.is_open())
 	{
 		throw std::runtime_error("unable to open file: " + ("Results " + data_file + " day " + p.collection_date + " coordinates file " + coordinates_file + ".txt"));
 	}
 
 	output_file << "Data file: " << data_file << endl
-				<< " Day " << p.collection_date << " coordinates file " << coordinates_file << " TW violation " << time_window_violation_cost << " operating time " << allowable_operating_time_cost << endl
+				<< " Day " << p.collection_date << " coordinates file " << coordinates_file << " TW violation penalty cost " << time_window_violation_cost << " driving time violation cost " << driving_time_violation_cost << endl
 				<< "Vehicles: " << s.number_of_vehicles_used << " Distance: " << s.total_distance_cost << " Distance_parameter: " << s.total_distance_parameter
-				<< " Route Duration: " << s.total_route_duration << " Route Duration_parameter: " << s.total_route_duration_parameter << " time window violation " << s.total_time_window_violation << " time window violation_parameter " << s.total_time_window_violation_parameter
-				<< " overtime " << s.total_overtime << " overtime_parameter " << s.total_overtime_parameter << " allowable operating time " << s.total_driving_time << " allowable operating time_parameter " << s.total_driving_time_parameter << " Total Cost: " << s.total_cost << "\n";
+				<< " Route Duration: " << s.total_route_duration << " Route Duration_parameter: " << s.total_route_duration_parameter << " TW_violation_parameter: " << s.total_time_window_violation_parameter 
+				<< " TW_violation: " << s.total_time_window_violation << " Overtime_parameter: " << s.total_overtime_parameter << " Overtime: " << s.total_overtime << " Driving_time_violation_parameter: " << s.total_driving_time_violation_parameter
+				<< " Driving_time_violation: " << s.total_driving_time_violation_parameter << " Total Cost: " << s.total_cost << "\n";
 
 	//for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
 
@@ -1161,7 +1284,7 @@ void write_csv_output(problem &p, solution &s)
 	fstream output_file;
 
 	// toevoegen: totale kost vlak voor perturbatie
-	std::string file_name = "csv_results_september.csv";
+	std::string file_name = "csv_results.csv";
 	// Open file as Input to check if the file exist or not
 	output_file.open(file_name, std::ios::in);
 	if (!output_file.is_open())
@@ -1181,18 +1304,18 @@ void write_csv_output(problem &p, solution &s)
 					<< "coordinates_file,"
 					<< "resolution,"
 					<< "TW_violation_cost,"
-					<< "operating_time_cost,"
+					<< "driving_time_violation_cost,"
 					<< "number_of_vehicles,"
 					<< "distance_cost,"
 					<< "distance_parameter,"
 					<< "route_duration,"
 					<< "route_duration_parameter,"
-					<< "time_window_violation,"
-					<< "time_window_violation_parameter,"
-					<< "overtime,"
-					<< "overtime_parameter,"
-					<< "allowable_operating_time,"
-					<< "allowable_operating_time_parameter,"
+					<< "time_window_violation"
+					<< "time_window_violation_parameter"
+					<< "overtime"
+					<< "overtime_parameter"
+					<< "driving_time_violation"
+					<< "driving_time_violation_parameter"
 					<< "total_cost,"
 					<< "\n";
 	}
@@ -1213,18 +1336,89 @@ void write_csv_output(problem &p, solution &s)
 				<< coordinates_file << ","
 				<< resolution << ","
 				<< time_window_violation_cost << ","
-				<< allowable_operating_time_cost << ","
+				<< driving_time_violation_cost << ","
 				<< s.number_of_vehicles_used << ","
 				<< s.total_distance_cost << ","
 				<< s.total_distance_parameter << ","
 				<< s.total_route_duration << ","
-				<< s.total_route_duration_parameter << ","
 				<< s.total_time_window_violation << ","
 				<< s.total_time_window_violation_parameter << ","
 				<< s.total_overtime << ","
 				<< s.total_overtime_parameter << ","
-				<< s.total_driving_time << ","
-				<< s.total_driving_time_parameter << ","
+				<< s.total_driving_time_violation << ","
+				<< s.total_driving_time_violation_parameter << ","
 				<< s.total_cost << "\n";
+	output_file.close();
+}
+
+void write_csv_output_2(problem& p, solution& s)
+{
+	fstream output_file;
+
+	// toevoegen: totale kost vlak voor perturbatie
+	std::string file_name = "csv_results_actual_demand.csv";
+	// Open file as Input to check if the file exist or not
+	output_file.open(file_name, std::ios::in);
+	if (!output_file.is_open())
+	{
+		//If the files as input could not open, then it does not exist.
+		//Try to make an output file with the name provided.
+		output_file.open(file_name, std::ios::out);
+		if (!output_file.is_open())
+		{
+			//If the system couldnot generate (create the file) and open it then there is a problem.
+			throw std::runtime_error("unable to open file: " + (file_name));
+		}
+		//If the ourput file could be created and opened.
+		//Put the header (only once when the file is just created)
+		output_file << "data_file,"
+			<< "collection_date,"
+			<< "coordinates_file,"
+			<< "resolution,"
+			<< "TW_violation_cost,"
+			<< "driving_time_violation_cost,"
+			<< "number_of_vehicles,"
+			<< "distance_cost,"
+			<< "distance_parameter,"
+			<< "route_duration,"
+			<< "route_duration_parameter,"
+			<< "time_window_violation"
+			<< "time_window_violation_parameter"
+			<< "overtime"
+			<< "overtime_parameter"
+			<< "driving_time_violation"
+			<< "driving_time_violation_parameter"
+			<< "total_cost,"
+			<< "\n";
+	}
+	//If the file as input could be opened, that means the file exist. 
+	//In this case, close the InputStream and start an appened stream instead.
+	else
+	{
+		output_file.close();
+		output_file.open(file_name, std::ios::app);
+		if (!output_file.is_open())
+		{
+			throw std::runtime_error("unable to open file: " + (file_name));
+		}
+	}
+	//Here the file will be exist and 
+	output_file << data_file << ","
+		<< p.collection_date << ","
+		<< coordinates_file << ","
+		<< resolution << ","
+		<< time_window_violation_cost << ","
+		<< driving_time_violation_cost << ","
+		<< s.number_of_vehicles_used << ","
+		<< s.total_distance_cost << ","
+		<< s.total_distance_parameter << ","
+		<< s.total_route_duration << ","
+		<< s.total_time_window_violation << ","
+		<< s.total_time_window_violation_parameter << ","
+		<< s.total_overtime << ","
+		<< s.total_overtime_parameter << ","
+		<< s.total_driving_time_violation << ","
+		<< s.total_driving_time_violation_parameter << ","
+		<< s.total_cost << "\n";
 	output_file.close();
 }

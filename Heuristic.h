@@ -11,7 +11,9 @@ const double km_cost = 0.5834;
 const double driver_cost = 0.4166666666666667;
 const double overtime_cost = 0.0463333333333333;
 extern double time_window_violation_cost;
-extern double allowable_operating_time_cost;
+extern double driving_time_violation_cost;
+extern double value_no_improvement;
+extern double perturbation_percentage;
 
 class ProbabilityEstimator; // forward declaration
 
@@ -34,7 +36,8 @@ struct node
 	double upper_tw;
 	std::string flow_of_goods;
 	std::string transport_type;
-	double demand;
+	double specified_demand;
+	double actual_demand;
 	double service_dur;
 	int depot_postal_code;
 	std::string depot_country;
@@ -49,7 +52,7 @@ struct problem
 	int n_customers;
 	int n_vehicles;
 	double vehicle_cap;
-	int max_operating_time;
+	int max_driving_time;
 	int max_route_duration;
 	std::vector<std::vector<double>> distance_matrix;
 	std::vector<std::vector<double>> time_matrix;
@@ -59,12 +62,13 @@ struct route
 {
 	std::vector<int> route;
 	std::vector<double> load;
+	std::vector<double> load_actualdemand;
 	std::vector<double> schedule;
 	std::vector<double> earliest_time;
 	std::vector<double> latest_time;
 	double distance_cost;
 	double distance_parameter;
-	double operating_time;
+	double driving_time;
 	int route_used;
 	double route_duration;
 	double route_duration_parameter;
@@ -72,8 +76,8 @@ struct route
 	double time_window_violation_parameter;
 	double overtime;
 	double overtime_parameter;
-	double driving_time;
-	double driving_time_parameter;
+	double driving_time_violation;
+	double driving_time_violation_parameter;
 	double route_cost;
 	double weighted_route_cost;
 	double weighted_distance_cost;
@@ -84,8 +88,8 @@ struct route
 	double weighted_time_window_violation_parameter;
 	double weighted_overtime;
 	double weighted_overtime_parameter;
-	double weighted_driving_time;
-	double weighted_driving_time_parameter;
+	double weighted_driving_time_violation;
+	double weighted_driving_time_violation_parameter;
 	std::vector<double> probability;
 	double departure_time;
 };
@@ -102,11 +106,13 @@ struct solution
 	double total_time_window_violation_parameter;
 	double total_overtime;
 	double total_overtime_parameter;
-	double total_driving_time;
-	double total_driving_time_parameter;
+	double total_driving_time_violation;
+	double total_driving_time_violation_parameter;
 	std::vector<int> route_customer;
 	std::vector<int> position_customer;
+	int position_failure;
 	bool possible_insertion;
+	
 };
 
 /* Preprocessing functions */
@@ -127,10 +133,15 @@ void bereken_gewogen_route_cost(problem &p, solution &s1, solution &s2, int vehi
 void calculate_total_cost(problem &p, solution &s);
 void change(problem &p, struct solution &s, int vehicle1, int vehicle2);
 int last_route(problem &p, solution &s);
+void actual_demand(problem& p, solution& s, int vehicle_id);
+int position_failure(problem& p, solution& s, int vehicle_id);
+void calculate_total_cost_actualdemand(problem& p, solution& s);
 
 /* Local search operators */
 void relocate(struct problem &p, struct solution &s1, struct solution &s2, struct solution &s3);
 void swap(struct problem &p, struct solution &s_prev, struct solution &s_curr, struct solution &s_best);
+//void function_relocate(problem& p, solution& s_local_best, solution& s_prev, solution& s_curr, solution& s_total_best, solution& s_ILS_best);
+//void function_swap(problem& p, solution& s_local_best, solution& s_prev, solution& s_curr, solution& s_total_best, solution& s_ILS_best);
 
 /* Supporting functions */
 void remove_customer(problem &p, struct solution &s, int vehicle_id, int position);
@@ -150,5 +161,6 @@ std::vector<double> probability_of_failure(problem &p, solution &s, int vehicle_
 /* Output */
 void write_output_file(problem &p, solution &s);
 void write_csv_output(problem &p, solution &s);
+void write_csv_output_2(problem& p, solution& s);
 
 #endif

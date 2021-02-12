@@ -34,7 +34,7 @@ void show_usage(std::string name)
 			  << "\tcollection_date: A specific day to run the algorithm on. E.g. 3-Sep-2018\n"
 			  << "\tcoordinates_file: A text file representing an adjacency matrix of nodes. E.g. distance_matrix3sep.txt\n"
 			  << "\ttime_window_violation_cost: A double number. E.g. 0.5\n"
-			  << "\tallowable_operating_time_cost: A double number. E.g. 1000\n"
+			  << "\tdriving_time_violation_cost: A double number. E.g. 1000\n"
 			  << "\tresolution: A string or an integer number representing the resolution of the probability estimator. E.g. gaussian for GaussianDistribution OR 14 for DiscreteDistribution\n"
 			  << "Example: " << name << " General_Cargo_LTL_2018_v10072019_input_code\\ adjusted\\ tw.txt 2-Jan-2018 distance_matrix\\ 2\\ jan.txt 0.5 1000 14"
 			  << std::endl;
@@ -44,8 +44,11 @@ string data_file;		 //= "Inputcode10customers.txt";
 string coordinates_file; // = "distance_matrix10klanten.txt";
 
 double time_window_violation_cost;	  // = 10;
-double allowable_operating_time_cost; // = 1000;
+double driving_time_violation_cost; // = 1000;
 string resolution;
+double perturbation_percentage = 0.15; //0.2;
+double value_no_improvement = 10; //2;
+
 /* Main function to run the algorithm */
 int main(int argc, char *argv[])
 {
@@ -53,8 +56,7 @@ int main(int argc, char *argv[])
 		 << "\n";
 	auto start = chrono::high_resolution_clock::now();
 
-	double perturbation_percentage = 0.2;
-	int value_no_improvement = 2;
+
 
 	srand(time(NULL));
 	/*
@@ -70,33 +72,38 @@ int main(int argc, char *argv[])
 	*/
 	struct problem p;
 
-	if (argc < 7)
+	if (false)
 	{
-		std::cerr << "The program expect 6 arguments to be passed.\nCurrently " + to_string(argc - 1) + " are passed \nSee Usage below." << std::endl;
+		std::cerr << "The program expect 8 arguments to be passed.\nCurrently " + to_string(argc - 1) + " are passed \nSee Usage below." << std::endl;
 		show_usage(argv[0]);
 		return 1;
 	}
 	else
 	{
+
 		try
 		{
-			data_file = argv[1];
-			p.collection_date = argv[2];
-			coordinates_file = argv[3];
-			time_window_violation_cost = stod(argv[4]);
-			allowable_operating_time_cost = stod(argv[5]);
-			resolution = argv[6];
-			if (resolution == GAUSSIAN)
-			{
-				cout << "Initial solution with " << resolution << "\n";
-				p.pe = new GaussianDistribution();
-			}
-			else
-			{
+			data_file = argv[1]; /*"C:\\Users\\lucp9937\\source\\repos\\SiliaMertens\\Essers-case\\Inputfile_experiments_tw2u.txt";*/
+			p.collection_date = argv[2]; /*"04-Sep-2018";*/
+			coordinates_file = argv[3]; /*"C:\\Users\\lucp9937\\source\\repos\\SiliaMertens\\Essers-case\\distance_matrix4sep.txt";*/
+			resolution = argv[4]; /*"14";*/
+			time_window_violation_cost = stod(argv[5]);  /*stod("1");*/
+			driving_time_violation_cost = stod(argv[6]);/* stod("1");*/
+			
+			
+			
+
+			//if (resolution == GAUSSIAN)
+			//{
+			//	cout << "Initial solution with " << resolution << "\n";
+			//	p.pe = new GaussianDistribution();
+			//}
+			//else
+			//{
 				p.pe = new DiscreteDistribution();
-			}
+			//}
 		}
-		catch (const std::exception &e)
+		catch (const std::exception& e)
 		{
 			std::cerr << e.what() << '\n';
 			show_usage(argv[0]);
@@ -104,21 +111,34 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	//if (argc > 1) {
+	//	data_file = argv[1];
+	//	p.collection_date = argv[2];
+	//	coordinates_file = argv[3];
+	//	perturbation_percentage = stod(argv[4]);
+	//	value_no_improvement = stoi(argv[5]);
+	//	time_window_violation_cost = stod(argv[6]);
+	//	driving_time_violation_cost = stod(argv[7]);
+	//	resolution = argv[8];
+	//}
+
 	read_data(p);
 	read_distance_and_time_matrix(p);
 
-	p.pe->readDistributions(p.collection_date, resolution); // read probabilities of 'p.collection_date'
+	p.pe->readDistributions(/*"C:\\Users\\lucp9937\\source\\repos\\SiliaMertens\\Essers-case\\" + */p.collection_date, resolution); // read probabilities of 'p.collection_date'
 
 	struct solution s_curr;
 	struct solution s_prev;
 	struct solution s_local_best;
 	struct solution s_total_best;
 	struct solution s_ILS_best;
+	struct solution s_actual;
 	initialize_solution(p, s_curr);
 	initialize_solution(p, s_prev);
 	initialize_solution(p, s_local_best);
 	initialize_solution(p, s_total_best);
 	initialize_solution(p, s_ILS_best);
+	initialize_solution(p, s_actual);
 
 	//TODO: Optimise this customer (random) insertion code
 	/*
@@ -152,7 +172,6 @@ int main(int argc, char *argv[])
 	//FIXME: The block of generating a vector + randomly shuffling + this block,,, are all to do one thing (SORT based on distance (which is done inside the perform_best_insertion))
 	for (int customer_id = 0; customer_id <= customers_to_be_inserted.size() - 1; customer_id++)
 	{
-
 		perform_best_insertion(p, s_curr, customers_to_be_inserted[customer_id]);
 	}
 
@@ -160,7 +179,7 @@ int main(int argc, char *argv[])
 	update_solution(s_curr, s_local_best);
 
 	cout << "Initial solution with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost << " distance_parameter " << s_local_best.total_distance_parameter
-		 << " route duration " << s_local_best.total_route_duration << " route duration parameter " << s_local_best.total_route_duration_parameter << " time window violation " << s_local_best.total_time_window_violation << " time window violation parameter " << s_local_best.total_time_window_violation_parameter << " overtime " << s_local_best.total_overtime << " overtime_parameter " << s_local_best.total_overtime_parameter << " allowable operating time " << s_local_best.total_driving_time << " allowable operating time_parameter " << s_local_best.total_driving_time_parameter << " total cost " << s_local_best.total_cost << "\n";
+		 << " route duration " << s_local_best.total_route_duration << " route duration parameter " << s_local_best.total_route_duration_parameter << " time window violation " << s_local_best.total_time_window_violation << " time window violation parameter " << s_local_best.total_time_window_violation_parameter << " overtime " << s_local_best.total_overtime << " overtime_parameter " << s_local_best.total_overtime_parameter << " driving time violation " << s_local_best.total_driving_time_violation << " driving time violation parameter " << s_local_best.total_driving_time_violation_parameter << " total cost " << s_local_best.total_cost << "\n";
 
 	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 	{
@@ -195,154 +214,102 @@ int main(int argc, char *argv[])
 	*/
 	// Store the best solution as the previous best.
 
-	update_solution(s_local_best, s_prev);
-	relocate(p, s_prev, s_curr, s_local_best);
 
-	// while loop uitvoeren op RELOCATE totdat er geen verbeteringen meer zijn
-	while (s_local_best.total_cost < s_prev.total_cost)
-	{ // while loop uitvoeren op RELOCATE totdat er geen verbeteringen meer zijn
+/*	while (s_local_best.total_cost < s_prev.total_cost) {*/ // relocate en swap uitvoeren totdat er geen verbeteringen meer gevonden worden 
+
 		update_solution(s_local_best, s_prev);
 		relocate(p, s_prev, s_curr, s_local_best);
-		//TODO: Optimise all prints in a function or store them in files.
-		cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-			 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
-		for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+
+		// while loop uitvoeren op RELOCATE totdat er geen verbeteringen meer zijn
+		while (s_local_best.total_cost < s_prev.total_cost)
 		{
-			for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
+			update_solution(s_local_best, s_prev);
+			relocate(p, s_prev, s_curr, s_local_best);
+			//TODO: Optimise all prints in a function or store them in files.
+			cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
+				<< " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " driving time violation " << s_local_best.total_driving_time_violation << " total cost " << s_local_best.total_cost << "\n";
+			for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 			{
-				cout << s_local_best.routes[vehicle_id].route[position] << " ";
+				for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
+				{
+					cout << s_local_best.routes[vehicle_id].route[position] << " ";
+				}
+				cout << "\n";
 			}
-			cout << "\n";
+
+			cout << "best cost na relocate " << s_local_best.total_cost << "\n";
 		}
 
-		cout << "best cost na relocate " << s_local_best.total_cost << "\n";
-	}
+		//Update holder variables with the new results.
+		if (s_local_best.total_cost < s_total_best.total_cost)
+		{
+			update_solution(s_local_best, s_total_best);
+			update_solution(s_local_best, s_ILS_best);
 
-	//Update holder variables with the new results.
-	if (s_local_best.total_cost < s_total_best.total_cost)
-	{
-		update_solution(s_local_best, s_total_best);
-		update_solution(s_local_best, s_ILS_best);
+			cout << "total best " << s_total_best.total_cost << "\n";
+			//cout << "ILS best " << s_ILS_best.total_cost << "\n";
+		}
+		/*
+		-----------------------
+		END: Relocate flow
+		-----------------------
+		*/
 
-		cout << "total best " << s_total_best.total_cost << "\n";
-		//cout << "ILS best " << s_ILS_best.total_cost << "\n";
-	}
-	/*
-	-----------------------
-	END: Relocate flow
-	-----------------------
-	*/
+		/*
+		-----------------------
+		START: SWAP flow
+		-----------------------
+		- Swap two customers from different routes.
+			Differences with relocate:
+				- Never in the same routes.
+				- Current Route length is never change in swap whereas in relocate it does remove from one route and insert in another route (changing the length of both routes).
+		- The swap happens for all routes, for all clients (see inside swap()).
+		- The swap flow stops when there is no more improvments (note: current setup is considering only one relocation at a time)
+		*/
+		// Store the best solution as the previous best.
 
-	/*
-	-----------------------
-	START: SWAP flow
-	-----------------------
-	- Swap two customers from different routes.
-		Differences with relocate:
-			- Never in the same routes.
-			- Current Route length is never change in swap whereas in relocate it does remove from one route and insert in another route (changing the length of both routes).
-	- The swap happens for all routes, for all clients (see inside swap()). 
-	- The swap flow stops when there is no more improvments (note: current setup is considering only one relocation at a time)
-	*/
-	// Store the best solution as the previous best.
-	update_solution(s_local_best, s_prev);
-	swap(p, s_prev, s_curr, s_local_best);
-	// while loop uitvoeren op SWAP totdat er geen verbeteringen meer zijn
-	while (s_local_best.total_cost < s_prev.total_cost)
-	{ // while loop uitvoeren op SWAP totdat er geen verbeteringen meer zijn
+
+
 		update_solution(s_local_best, s_prev);
 		swap(p, s_prev, s_curr, s_local_best);
+		// while loop uitvoeren op SWAP totdat er geen verbeteringen meer zijn
+		while (s_local_best.total_cost < s_prev.total_cost)
+		{ // while loop uitvoeren op SWAP totdat er geen verbeteringen meer zijn
+			update_solution(s_local_best, s_prev);
+			swap(p, s_prev, s_curr, s_local_best);
 
-		cout << "\nNew best solution after swap with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-			 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
-		for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
-		{
-			for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
+			cout << "\nNew best solution after swap with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
+				<< " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " driving time violation " << s_local_best.total_driving_time_violation << " total cost " << s_local_best.total_cost << "\n";
+			for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 			{
-				cout << s_local_best.routes[vehicle_id].route[position] << " ";
+				for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
+				{
+					cout << s_local_best.routes[vehicle_id].route[position] << " ";
+				}
+
+				cout << "\n";
 			}
 
-			cout << "\n";
+			cout << "best cost na swap " << s_local_best.total_cost << "\n";
 		}
-
-		cout << "best cost na swap " << s_local_best.total_cost << "\n";
-	}
-	//Update holder variables with the new results.
-	if (s_local_best.total_cost < s_total_best.total_cost)
-	{
-		update_solution(s_local_best, s_total_best);
-		update_solution(s_local_best, s_ILS_best);
-
-		cout << "total best " << s_total_best.total_cost << "\n";
-		cout << "ILS best " << s_ILS_best.total_cost << "\n";
-	}
-	/*
-	-----------------------
-	END: SWAP flow
-	-----------------------
-	*/
-	/*
-	-----------------------
-	Start: Second Relocate flow
-	-----------------------
-	*/
-
-	update_solution(s_local_best, s_prev);
-	relocate(p, s_prev, s_curr, s_local_best);
-
-	cout << "\nNew best solution after first relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-		 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
-	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
-	{
-		for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
+		//Update holder variables with the new results.
+		if (s_local_best.total_cost < s_total_best.total_cost)
 		{
-			cout << s_local_best.routes[vehicle_id].route[position] << " ";
+			update_solution(s_local_best, s_total_best);
+			update_solution(s_local_best, s_ILS_best);
+
+			cout << "total best " << s_total_best.total_cost << "\n";
+			cout << "ILS best " << s_ILS_best.total_cost << "\n";
 		}
-		cout << "\n";
-	}
+		/*
+		-----------------------
+		END: SWAP flow
+		-----------------------
+		*/
 
-	cout << "best cost na first relocate " << s_local_best.total_cost << "\n";
+	//}
 
-	if (s_local_best.total_cost < s_total_best.total_cost)
-	{
-		update_solution(s_local_best, s_total_best);
-
-		cout << "total best " << s_total_best.total_cost << "\n";
-	}
-
-	while (s_local_best.total_cost < s_prev.total_cost)
-	{ // while loop op RELOCATE uitvoeren totdat er geen verbeteringen meer zijn
-
-		update_solution(s_local_best, s_prev);
-		relocate(p, s_prev, s_curr, s_local_best);
-
-		cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-			 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
-		for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
-		{
-			for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
-			{
-				cout << s_local_best.routes[vehicle_id].route[position] << " ";
-			}
-			cout << "\n";
-		}
-
-		cout << "best cost na relocate " << s_local_best.total_cost << "\n";
-	}
-
-	if (s_local_best.total_cost < s_total_best.total_cost)
-	{ // moet dit hier ook telkens, of pas na de laatste relocate?
-		update_solution(s_local_best, s_total_best);
-		update_solution(s_local_best, s_ILS_best);
-
-		cout << "total best " << s_total_best.total_cost << "\n";
-		//cout << "ILS best " << s_ILS_best.total_cost << "\n";
-	}
-	/*
-	-----------------------
-	END: Second Relocate flow
-	-----------------------
-	*/
+	
 
 	/*
 	-----------------------
@@ -430,7 +397,7 @@ int main(int argc, char *argv[])
 		}
 
 		cout << "New initial solution after perturbation with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-			 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " total cost " << s_local_best.total_cost << "\n";
+			 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " overtime " << s_local_best.total_overtime << " driving time violation " << s_local_best.total_driving_time_violation << " total cost " << s_local_best.total_cost << "\n";
 		for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 		{
 			for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
@@ -459,149 +426,114 @@ int main(int argc, char *argv[])
 
 		/*
 		-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-		START:  Relocate - Swap - Relocate flows after the insertion of removed customer
+		START:  Relocate - Swap flows after the insertion of removed customer
 		-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 		*/
-		update_solution(s_local_best, s_prev);
-		relocate(p, s_prev, s_curr, s_local_best);
 
-		//cout << "\nNew best solution after first relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-		//	<< " route duration " << s_local_best.total_route_duration << " total cost " << s_local_best.total_cost << "\n";
-		//for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
-		//	for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++) {
-		//		cout << s_local_best.routes[vehicle_id].route[position] << " ";
-		//	}
-		//	cout << "\n";
-		//}
-
-		//cout << "best cost na first relocate " << s_local_best.total_cost << "\n";
-
-		//if (s_local_best.total_cost < s_total_best.total_cost) {
-		//	update_solution(s_local_best, s_total_best);
-
-		//	cout << "total best " << s_total_best.total_cost << "\n";
-		//}
-
-		while (s_local_best.total_cost < s_prev.total_cost)
-		{ // while loop uitvoeren totdat er geen verbeteringen meer zijn
+		//while (s_local_best.total_cost < s_prev.total_cost) {
 
 			update_solution(s_local_best, s_prev);
 			relocate(p, s_prev, s_curr, s_local_best);
 
-			cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-				 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " time window violation parameter " << s_local_best.total_time_window_violation_parameter
-				 << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " allowable operating time parameter " << s_local_best.total_driving_time_parameter << " total cost " << s_local_best.total_cost << "\n";
-			for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
-			{
-				for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
+			//cout << "\nNew best solution after first relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
+			//	<< " route duration " << s_local_best.total_route_duration << " total cost " << s_local_best.total_cost << "\n";
+			//for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+			//	for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++) {
+			//		cout << s_local_best.routes[vehicle_id].route[position] << " ";
+			//	}
+			//	cout << "\n";
+			//}
+
+			//cout << "best cost na first relocate " << s_local_best.total_cost << "\n";
+
+			//if (s_local_best.total_cost < s_total_best.total_cost) {
+			//	update_solution(s_local_best, s_total_best);
+
+			//	cout << "total best " << s_total_best.total_cost << "\n";
+			//}
+
+			while (s_local_best.total_cost < s_prev.total_cost)
+			{ // while loop uitvoeren totdat er geen verbeteringen meer zijn
+
+				update_solution(s_local_best, s_prev);
+				relocate(p, s_prev, s_curr, s_local_best);
+
+				cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
+					<< " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " time window violation parameter " << s_local_best.total_time_window_violation_parameter
+					<< " overtime " << s_local_best.total_overtime << " driving time violation " << s_local_best.total_driving_time_violation << " driving time violation parameter " << s_local_best.total_driving_time_violation_parameter << " total cost " << s_local_best.total_cost << "\n";
+				for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 				{
-					cout << s_local_best.routes[vehicle_id].route[position] << " ";
+					for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
+					{
+						cout << s_local_best.routes[vehicle_id].route[position] << " ";
+					}
+
+					cout << "\n";
 				}
 
-				cout << "\n";
+				cout << "best cost na relocate " << s_local_best.total_cost << "\n";
 			}
 
-			cout << "best cost na relocate " << s_local_best.total_cost << "\n";
-		}
+			if (s_local_best.total_cost < s_total_best.total_cost)
+			{
+				update_solution(s_local_best, s_total_best);
 
-		if (s_local_best.total_cost < s_total_best.total_cost)
-		{
-			update_solution(s_local_best, s_total_best);
+				cout << "total best " << s_total_best.total_cost << "\n";
+			}
 
-			cout << "total best " << s_total_best.total_cost << "\n";
-		}
+			if (s_local_best.total_cost < s_ILS_best.total_cost)
+			{
+				update_solution(s_local_best, s_ILS_best);
 
-		if (s_local_best.total_cost < s_ILS_best.total_cost)
-		{
-			update_solution(s_local_best, s_ILS_best);
+				cout << "ILS best " << s_ILS_best.total_cost << "\n";
+			}
 
-			cout << "ILS best " << s_ILS_best.total_cost << "\n";
-		}
-
-		update_solution(s_local_best, s_prev);
-		swap(p, s_prev, s_curr, s_local_best);
-
-		while (s_local_best.total_cost < s_prev.total_cost)
-		{
 			update_solution(s_local_best, s_prev);
 			swap(p, s_prev, s_curr, s_local_best);
 
-			cout << "\nNew best solution after swap with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-				 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " time window violation parameter " << s_local_best.total_time_window_violation_parameter
-				 << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " allowable operating time parameter " << s_local_best.total_driving_time_parameter << " total cost " << s_local_best.total_cost << "\n";
-			for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+			while (s_local_best.total_cost < s_prev.total_cost)
 			{
-				for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
+				update_solution(s_local_best, s_prev);
+				swap(p, s_prev, s_curr, s_local_best);
+
+				cout << "\nNew best solution after swap with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
+					<< " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " time window violation parameter " << s_local_best.total_time_window_violation_parameter
+					<< " overtime " << s_local_best.total_overtime << " driving time violation " << s_local_best.total_driving_time_violation << " driving time violation parameter " << s_local_best.total_driving_time_violation_parameter << " total cost " << s_local_best.total_cost << "\n";
+				for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 				{
-					cout << s_local_best.routes[vehicle_id].route[position] << " ";
+					for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
+					{
+						cout << s_local_best.routes[vehicle_id].route[position] << " ";
+					}
+
+					cout << "\n";
 				}
 
-				cout << "\n";
+				cout << "best cost na swap " << s_local_best.total_cost << "\n";
 			}
 
-			cout << "best cost na swap " << s_local_best.total_cost << "\n";
-		}
-
-		if (s_local_best.total_cost < s_total_best.total_cost)
-		{
-			update_solution(s_local_best, s_total_best);
-
-			cout << "total best " << s_total_best.total_cost << "\n";
-		}
-
-		if (s_local_best.total_cost < s_ILS_best.total_cost)
-		{
-			update_solution(s_local_best, s_ILS_best);
-
-			cout << "ILS best " << s_ILS_best.total_cost << "\n";
-		}
-
-		update_solution(s_local_best, s_prev);
-		relocate(p, s_prev, s_curr, s_local_best);
-
-		//cout << "\nNew best solution after first relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-		//	<< " route duration " << s_local_best.total_route_duration << " total cost " << s_local_best.total_cost << "\n";
-		//for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
-		//	for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++) {
-		//		cout << s_local_best.routes[vehicle_id].route[position] << " ";
-		//	}
-		//	cout << "\n";
-		//}
-
-		//cout << "best cost na first relocate " << s_local_best.total_cost << "\n";
-
-		//if (s_local_best.total_cost < s_total_best.total_cost) {
-		//	update_solution(s_local_best, s_total_best);
-
-		//	cout << "total best " << s_total_best.total_cost << "\n";
-		//}
-
-		while (s_local_best.total_cost < s_prev.total_cost)
-		{ // while loop uitvoeren totdat er geen verbeteringen meer zijn
-
-			update_solution(s_local_best, s_prev);
-			relocate(p, s_prev, s_curr, s_local_best);
-
-			cout << "\nNew best solution after relocate with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost
-				 << " route duration " << s_local_best.total_route_duration << " time window violation " << s_local_best.total_time_window_violation << " time window violation parameter " << s_local_best.total_time_window_violation_parameter
-				 << " overtime " << s_local_best.total_overtime << " allowable operating time " << s_local_best.total_driving_time << " allowable operating time parameter " << s_local_best.total_driving_time_parameter << " total cost " << s_local_best.total_cost << "\n";
-			for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+			if (s_local_best.total_cost < s_total_best.total_cost)
 			{
-				for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
-				{
-					cout << s_local_best.routes[vehicle_id].route[position] << " ";
-				}
+				update_solution(s_local_best, s_total_best);
 
-				cout << "\n";
+				cout << "total best " << s_total_best.total_cost << "\n";
 			}
 
-			cout << "best cost na relocate " << s_local_best.total_cost << "\n";
-		}
-		/*
-		-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-		END:  Relocate - Swap - Relocate flows after the insertion of removed customer
-		-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
-		*/
+			if (s_local_best.total_cost < s_ILS_best.total_cost)
+			{
+				update_solution(s_local_best, s_ILS_best);
+
+				cout << "ILS best " << s_ILS_best.total_cost << "\n";
+			}
+
+			/*
+			-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+			END:  Relocate - Swap flows after the insertion of removed customer
+			-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
+			*/
+
+		//}
+	
 
 		//FIXME: Is this ever going to be TRUE?! Related to lone 295
 		if (s_local_best.total_cost < s_total_best.total_cost)
@@ -632,6 +564,34 @@ int main(int argc, char *argv[])
 
 		cout << "final ILS best " << s_ILS_best.total_cost << "\n";
 
+
+		cout << "\nFINALE ROUTE ";
+
+		cout << "\nBeste route " << s_ILS_best.number_of_vehicles_used << " vehicles and distance " << s_ILS_best.total_distance_cost
+			<< " route duration " << s_ILS_best.total_route_duration << " time window violation " << s_ILS_best.total_time_window_violation <<
+			" overtime " << s_ILS_best.total_overtime << " driving time violation " << s_ILS_best.total_driving_time_violation << " total cost " << s_ILS_best.total_cost << "\n";
+
+		for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+			for (size_t position = 0; position < s_ILS_best.routes[vehicle_id].route.size(); position++) {
+				cout << s_ILS_best.routes[vehicle_id].route[position] << " ";
+			}
+
+			cout << "\n";
+		}
+
+		cout << "\n";
+
+		update_solution(s_ILS_best, s_actual);
+
+		for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+			actual_demand(p, s_actual, vehicle_id);
+
+		}
+
+		calculate_total_cost_actualdemand(p, s_actual);
+
+		cout << "total cost actual demand " << s_actual.total_cost << "\n";
+
 		auto stop = chrono::high_resolution_clock::now();
 
 		// Get duration. Substart timepoints to
@@ -644,5 +604,7 @@ int main(int argc, char *argv[])
 		write_output_file(p, s_ILS_best);
 	}
 	write_csv_output(p, s_ILS_best);
+	write_csv_output_2(p, s_actual);
+	
 	return 0;
 }
