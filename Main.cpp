@@ -33,10 +33,10 @@ void show_usage(std::string name)
 			  << "\tdata_file: A text file representing the dataset. E.g. Inputfile_tw2u.txt\n"
 			  << "\tcollection_date: A specific day to run the algorithm on. E.g. 3-Sep-2018\n"
 			  << "\tcoordinates_file: A text file representing an adjacency matrix of nodes. E.g. distance_matrix3sep.txt\n"
+			  << "\tresolution: A string or an integer number representing the resolution of the probability estimator. E.g. gaussian for GaussianDistribution OR 14 for DiscreteDistribution\n"
 			  << "\ttime_window_violation_cost: A double number. E.g. 0.5\n"
 			  << "\tdriving_time_violation_cost: A double number. E.g. 1000\n"
-			  << "\tresolution: A string or an integer number representing the resolution of the probability estimator. E.g. gaussian for GaussianDistribution OR 14 for DiscreteDistribution\n"
-			  << "Example: " << name << " General_Cargo_LTL_2018_v10072019_input_code\\ adjusted\\ tw.txt 2-Jan-2018 distance_matrix\\ 2\\ jan.txt 0.5 1000 14"
+			  << "Example: " << name << " General_Cargo_LTL_2018_v10072019_input_code\\ adjusted\\ tw.txt 2-Jan-2018 distance_matrix\\ 2\\ jan.txt 14 0.5 1000"
 			  << std::endl;
 }
 // "General_Cargo_LTL_2018_v10072019_input_code adjusted tw.txt" "2-Jan-2018" "distance_matrix 2 jan.txt" 10 1000 10
@@ -93,15 +93,16 @@ int main(int argc, char *argv[])
 			
 			
 
-			//if (resolution == GAUSSIAN)
-			//{
-			//	cout << "Initial solution with " << resolution << "\n";
-			//	p.pe = new GaussianDistribution();
-			//}
-			//else
-			//{
+			if (resolution == GAUSSIAN)
+			{
+				cout << "Initial solution with " << resolution << "\n";
+				p.pe = new GaussianDistribution();
+			}
+			else
+			{
+				cout << "Initial solution with " << resolution << " bins Discrete distribution.\n";
 				p.pe = new DiscreteDistribution();
-			//}
+			}
 		}
 		catch (const std::exception& e)
 		{
