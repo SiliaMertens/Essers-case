@@ -604,8 +604,11 @@ int main(int argc, char *argv[])
 			 << "\n";
 		write_output_file(p, s_ILS_best);
 	}
-	write_csv_output(p, s_ILS_best);
-	write_csv_output_2(p, s_actual);
+
+	std::string file_name = "csv_results.csv";
+	write_csv_output(p, s_ILS_best, file_name);
+	// std::string file_name_actual ="csv_results_actual_demand.csv";
+	// write_csv_output(p, s_actual, file_name_actual);
 	
 	return 0;
 }
