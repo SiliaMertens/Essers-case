@@ -1413,6 +1413,7 @@ void write_csv_output_2(problem& p, solution& s)
 		<< s.total_distance_cost << ","
 		<< s.total_distance_parameter << ","
 		<< s.total_route_duration << ","
+		<< s.total_route_duration_parameter << ","
 		<< s.total_time_window_violation << ","
 		<< s.total_time_window_violation_parameter << ","
 		<< s.total_overtime << ","
