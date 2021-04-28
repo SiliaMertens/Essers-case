@@ -35,18 +35,25 @@ std::vector<std::vector<double>> ProbabilityEstimator::getEmpricialDistributions
     return resultDistros;
 }
 
-void ProbabilityEstimator::readDistributions(const std::string &collection_date, const std::string &resolution)
+void ProbabilityEstimator::readDistributions(const std::string &fname)
 {
 
-    std::cout << "Read distributions of a "<< this->classname() << " \n";
+    std::cout << "Reading distributions file "<< fname << " \n";
     // Clear the current distributions (i.e. distributions of the previous date)
     this->currCollDateVector.clear();
 
-    std::ifstream fin;
+    // file format is: <order_id, given_demand, cDist...>
+    // in case of 'gaussian', cDist = [mean, variance]
+    // in case of 'discrete', cDist = [...] corresponding to a binning of 0..13.7 into given nr of bins
+    unsigned int order_id;
+    double given_demand;
     std::vector<double> cDist;
-    std::string line, key, value;
+    
+    int i = 0;
+    std::ifstream fin;
+    std::string line, word;
     // Open an existing file of a specific date.
-    fin.open(collection_date + "_" + resolution + ".csv", std::ios::in);
+    fin.open(fname, std::ios::in);
     if (fin.is_open())
     {
         // read an entire row and store it in a string variable 'line'
@@ -54,29 +61,43 @@ void ProbabilityEstimator::readDistributions(const std::string &collection_date,
         {
             // used for streaming the line into words
             std::stringstream cstr(line);
-            //Read the first column of the line
-            //This represents the client id
-            //TODO: remove order_number and change the way files are generated.
-            std::getline(cstr, key, ',');
-            while (std::getline(cstr, value, ','))
+            
+            // read first two entries
+            std::getline(cstr, word, ',');
+            order_id = stoul(word);
+            std::getline(cstr, word, ',');
+            given_demand = stod(word);
+            
+            // TODO SILIA, ensure that in problem object, stop[i] has 'order_id' and 'given_demand' matching!!!
+            unsigned int p_order_id = order_id; // p.smth[i].smth
+            double p_given_demand = given_demand; // p.smth[i].smth
+            if ((order_id != p_order_id) or (given_demand != p_given_demand)) {
+                // if not: we are exporting data differently, and any results are meaningless
+                throw std::runtime_error("Mismatch in data detected for customer "+std::to_string(i));
+            }
+            
+            
+            // read rest into cdist 
+            while (std::getline(cstr, word, ','))
             {
                 try
                 {
-                    cDist.push_back(std::stod(value));
+                    cDist.push_back(std::stod(word));
                 }
                 catch (const std::exception &e)
                 {
-                    throw std::invalid_argument("ProbabilityEstimator.readDistributions() -> Value is not converted to double or does not exist in the file --> Value: " + value);
+                    throw std::invalid_argument("ProbabilityEstimator.readDistributions() -> Value is not converted to double or does not exist in the file --> Value: " + word);
                 }
             }
             this->currCollDateVector.push_back(cDist);
+            i = i + 1;
             //Clear the vector to store new values
             cDist.clear();
         }
     }
     else
     {
-        throw std::runtime_error("ProbabilityEstimator.readDistributions() -> Failed to read file '" + collection_date + "_" + resolution + ".csv" + "'\n");
+        throw std::runtime_error("ProbabilityEstimator.readDistributions() -> Failed to read file '"+fname+"'\n");
     }
     fin.close();
 }

@@ -24,7 +24,7 @@ using namespace std;
 
 extern string data_file;
 extern string coordinates_file;
-extern string resolution;
+extern string distribution_file;
 
 void read_data(problem &p)
 {
@@ -1302,7 +1302,7 @@ void write_csv_output(problem &p, solution &s, std::string f_name)
 		output_file << "data_file,"
 					<< "collection_date,"
 					<< "coordinates_file,"
-					<< "resolution,"
+					<< "distribution_file,"
 					<< "TW_violation_cost,"
 					<< "driving_time_violation_cost,"
 					<< "number_of_vehicles,"
@@ -1334,7 +1334,7 @@ void write_csv_output(problem &p, solution &s, std::string f_name)
 	output_file << data_file << ","
 				<< p.collection_date << ","
 				<< coordinates_file << ","
-				<< resolution << ","
+				<< distribution_file << ","
 				<< time_window_violation_cost << ","
 				<< driving_time_violation_cost << ","
 				<< s.number_of_vehicles_used << ","

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstdlib>
+#include <string_view>
 #include <string>
 #include <vector>
 #include <numeric>
@@ -13,8 +14,13 @@
 #include "GaussianDistribution.h"
 #include "DiscreteDistribution.h"
 using namespace std;
-//A macro definition for the string gaussian for quick access
-#define GAUSSIAN "gaussian"
+
+inline bool ends_with(std::string const & value, std::string const & ending)
+{
+    if (ending.size() > value.size()) return false;
+    return std::equal(ending.rbegin(), ending.rend(), value.rbegin());
+}
+
 void show(vector<int> const &input)
 {
 	cout << "shuffle ";
@@ -33,19 +39,19 @@ void show_usage(std::string name)
 			  << "\tdata_file: A text file representing the dataset. E.g. Inputfile_tw2u.txt\n"
 			  << "\tcollection_date: A specific day to run the algorithm on. E.g. 3-Sep-2018\n"
 			  << "\tcoordinates_file: A text file representing an adjacency matrix of nodes. E.g. distance_matrix3sep.txt\n"
-			  << "\tresolution: A string or an integer number representing the resolution of the probability estimator. E.g. gaussian for GaussianDistribution OR 14 for DiscreteDistribution\n"
 			  << "\ttime_window_violation_cost: A double number. E.g. 0.5\n"
 			  << "\tdriving_time_violation_cost: A double number. E.g. 1000\n"
-			  << "Example: " << name << " General_Cargo_LTL_2018_v10072019_input_code\\ adjusted\\ tw.txt 2-Jan-2018 distance_matrix\\ 2\\ jan.txt 14 0.5 1000"
+			  << "\tdistribution_file: A text file with the distribution, each line is <order_id>,<given_demand>,... where ... are doubles representing a distribution\n"
+			  << "Example: " << name << " General_Cargo_LTL_2018_v10072019_input_code\\ adjusted\\ tw.txt 2-Jan-2018 distance_matrix\\ 2\\ jan.txt 0.5 1000 emp_04-Sep-2018_b137.csv"
 			  << std::endl;
 }
-// "General_Cargo_LTL_2018_v10072019_input_code adjusted tw.txt" "2-Jan-2018" "distance_matrix 2 jan.txt" 10 1000 10
+// "General_Cargo_LTL_2018_v10072019_input_code adjusted tw.txt" "2-Jan-2018" "distance_matrix 2 jan.txt" 10 1000 "emp_04-Sep-2018_b137.csv"
 string data_file;		 //= "Inputcode10customers.txt";
 string coordinates_file; // = "distance_matrix10klanten.txt";
 
 double time_window_violation_cost;	  // = 10;
 double driving_time_violation_cost; // = 1000;
-string resolution;
+string distribution_file;
 double perturbation_percentage = 0.15; //0.2;
 double value_no_improvement = 10; //2;
 
@@ -84,23 +90,23 @@ int main(int argc, char *argv[])
 		try
 		{
 			data_file = argv[1]; /*"C:\\Users\\lucp9937\\source\\repos\\SiliaMertens\\Essers-case\\Inputfile_experiments_tw2u.txt";*/
-			p.collection_date = argv[2]; /*"04-Sep-2018";*/
+			p.collection_date = argv[2]; /*"4-Sep-2018";*/
 			coordinates_file = argv[3]; /*"C:\\Users\\lucp9937\\source\\repos\\SiliaMertens\\Essers-case\\distance_matrix4sep.txt";*/
-			resolution = argv[4]; /*"14";*/
-			time_window_violation_cost = stod(argv[5]);  /*stod("1");*/
-			driving_time_violation_cost = stod(argv[6]);/* stod("1");*/
+			time_window_violation_cost = stod(argv[4]);  /*stod("1");*/
+			driving_time_violation_cost = stod(argv[5]);/* stod("1");*/
+            distribution_file = argv[6]; /*"emp_04-Sep-2018_b137.csv"*/
 			
 			
 			
 
-			if (resolution == GAUSSIAN)
+			if (ends_with(distribution_file, "gaussian.csv"))
 			{
-				cout << "Initial solution with " << resolution << "\n";
+				cout << "Initial solution with " << distribution_file << ", Gaussian distribution\n";
 				p.pe = new GaussianDistribution();
 			}
 			else
 			{
-				cout << "Initial solution with " << resolution << " bins Discrete distribution.\n";
+				cout << "Initial solution with " << distribution_file << ", Discrete distribution.\n";
 				p.pe = new DiscreteDistribution();
 			}
 		}
@@ -126,7 +132,9 @@ int main(int argc, char *argv[])
 	read_data(p);
 	read_distance_and_time_matrix(p);
 
-	p.pe->readDistributions(/*"C:\\Users\\lucp9937\\source\\repos\\SiliaMertens\\Essers-case\\" + */p.collection_date, resolution); // read probabilities of 'p.collection_date'
+    cout << "Found "<<p.n_customers<<" customers\n";
+    
+	p.pe->readDistributions(distribution_file); // read probabilities of 'p.collection_date'
 
 	struct solution s_curr;
 	struct solution s_prev;
@@ -144,7 +152,7 @@ int main(int argc, char *argv[])
 	//TODO: Optimise this customer (random) insertion code
 	/*
 	-----------------------
-	START: Initial solution code (Insertion procedure)
+	START: Initial solution code (Insertion procedure)(customers_to_be_inserted.size() - i)
 	-----------------------
 	- Radomise the customers
 	- Insert them at best positions (considering distance and COST, see perform_best_insertion())

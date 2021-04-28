@@ -15,8 +15,9 @@
 GaussianDistribution::GaussianDistribution() { this->loadMeter = 13.7; }
 // overloaded constructor (i.e. in case different Load meter value is provided.)
 GaussianDistribution::GaussianDistribution(double lm) { this->loadMeter = lm; }
-inline double GaussianDistribution::cdf(double x, double mu, double sigma)
+inline double GaussianDistribution::cdf(double x, double mu, double var)
 {
+    double sigma = sqrt(var);
     return 0.5 * (1 + std::erf((x - mu) / (sigma * std::sqrt(2))));
 }
 inline double GaussianDistribution::accumulateResult(const std::vector<double> &dist)
@@ -26,10 +27,9 @@ inline double GaussianDistribution::accumulateResult(const std::vector<double> &
 }
 std::vector<double> GaussianDistribution::jointGaussian(const std::vector<double> &distOne, const std::vector<double> &distTwo)
 {
-    double jointVariance = distOne[2] + distTwo[2];
-    double jointStdv = sqrt(jointVariance);
     double jointMu = distOne[0] + distTwo[0];
-    std::vector<double> result{jointMu, jointStdv, jointVariance};
+    double jointVariance = distOne[1] + distTwo[1];
+    std::vector<double> result{jointMu, jointVariance};
     return result;
 }
 std::vector<double> GaussianDistribution::jointCDF(const std::vector<std::vector<double>> &empricialDists)
