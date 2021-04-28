@@ -79,6 +79,29 @@ struct route
 	double driving_time_violation;
 	double driving_time_violation_parameter;
 	double route_cost;
+
+	double distance_cost_no_recourse;
+	double distance_parameter_no_recourse;
+	double driving_time_no_recourse;
+	int route_used_no_recourse;
+	double route_duration_no_recourse;
+	double route_duration_parameter_no_recourse;
+	double route_cost_no_recourse;
+
+	double distance_cost_recourse;
+	double distance_parameter_recourse;
+	double driving_time_recourse;
+	int route_used_recourse;
+	double route_duration_recourse;
+	double route_duration_parameter_recourse;
+	double time_window_violation_recourse;
+	double time_window_violation_parameter_recourse;
+	double overtime_recourse;
+	double overtime_parameter_recourse;
+	double driving_time_violation_recourse;
+	double driving_time_violation_parameter_recourse;
+	double route_cost_recourse;
+
 	double weighted_route_cost;
 	double weighted_distance_cost;
 	double weighted_distance_parameter;
@@ -90,6 +113,16 @@ struct route
 	double weighted_overtime_parameter;
 	double weighted_driving_time_violation;
 	double weighted_driving_time_violation_parameter;
+	double weighted_route_cost_without_recourse;
+	double weighted_distance_cost_without_recourse;
+	double weighted_distance_parameter_without_recourse;
+	double weighted_route_duration_without_recourse;
+	double weighted_route_duration_parameter_without_recourse;
+	double weighted_route_cost_with_recourse;
+	double weighted_distance_cost_with_recourse;
+	double weighted_distance_parameter_with_recourse;
+	double weighted_route_duration_with_recourse;
+	double weighted_route_duration_parameter_with_recourse;
 	std::vector<double> probability;
 	double departure_time;
 };
@@ -99,6 +132,7 @@ struct solution
 	double total_distance_cost;
 	double total_distance_parameter;
 	int number_of_vehicles_used;
+	double vehicle_cost;
 	double total_route_duration;
 	double total_route_duration_parameter;
 	double total_cost;
@@ -108,6 +142,16 @@ struct solution
 	double total_overtime_parameter;
 	double total_driving_time_violation;
 	double total_driving_time_violation_parameter;
+	double total_distance_cost_without_recourse;
+	double total_distance_parameter_without_recourse;
+	double total_route_duration_without_recourse;
+	double total_route_duration_parameter_without_recourse;
+	double total_cost_without_recourse;
+	double total_distance_cost_with_recourse;
+	double total_distance_parameter_with_recourse;
+	double total_route_duration_with_recourse;
+	double total_route_duration_parameter_with_recourse;
+	double total_cost_with_recourse;
 	std::vector<int> route_customer;
 	std::vector<int> position_customer;
 	int position_failure;
@@ -127,6 +171,8 @@ void change_update_solution_vehicle(solution &s1, solution &s2, int vehicle1, in
 void position_removed_customers(problem &p, solution &s, int customer_id);
 void bereken_route_cost_zonder_recourse(problem &p, solution &s, int vehicle_id);
 void bereken_route_cost(problem &p, solution &s, int vehicle_id);
+void bereken_route_cost_zonder_recourse_actual_demand(problem& p, solution& s, int vehicle_id);
+void bereken_route_cost_actual_demand(problem& p, solution& s, int vehicle_id);
 std::vector<double> calculate_probabilities(problem &p, solution &s, int vehicle_id);
 void construct_failure_routes(problem &p, solution &s1, solution &s2, int vehicle_id, int position);
 void bereken_gewogen_route_cost(problem &p, solution &s1, solution &s2, int vehicle_id);
@@ -160,6 +206,6 @@ std::vector<double> probability_of_failure(problem &p, solution &s, int vehicle_
 
 /* Output */
 void write_output_file(problem &p, solution &s);
-void write_csv_output(problem &p, solution &s, std::string f_name);
+void write_csv_output(problem& p, solution& s, std::string f_name);
 
 #endif
