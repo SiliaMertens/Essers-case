@@ -11,7 +11,7 @@ public:
     virtual ~ProbabilityEstimator() {};
     virtual std::vector<double> jointCDF(const std::vector<std::vector<double>> &empricialDists) = 0;
     std::vector<std::vector<double>> getEmpricialDistributions(std::vector<int> &clientsIDs);
-    void readDistributions(const std::string &collection_date, const std::string &resolution);
+    void readDistributions(const std::string &fname);
     virtual std::string classname() = 0;
 };
 
