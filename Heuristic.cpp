@@ -24,10 +24,8 @@ using namespace std;
 
 extern string data_file;
 extern string coordinates_file;
-extern string resolution;
-
-extern double perturbation_percentage; 
-extern double value_no_improvement;
+extern string distribution_file;
+extern string optimization; 
 
 void read_data(problem &p)
 {
@@ -102,9 +100,9 @@ void read_data(problem &p)
 				current_node.service_dur = service_dur;
 
 				
-				//cout << "collection date " << current_node.collection_date << "\n";
-				//cout << "specified demand " << current_node.specified_demand << "\n";
-				//cout << "actual demand " << current_node.actual_demand << "\n";
+				cout << "collection date " << current_node.collection_date << "\n";
+				//cout << "unit description " << current_node.unit_description << "\n";
+				//cout << "delivery date " << current_node.delivery_date << "\n";
 
 				//Temprary counter for the index. Hence, p.n_customers can also be used (i.e. they are both the same increment).
 
@@ -381,9 +379,6 @@ void bereken_route_cost_zonder_recourse(problem &p, solution &s, int vehicle_id)
 		double temp_distance_param = p.distance_matrix[s.routes[vehicle_id].route[i]][s.routes[vehicle_id].route[i + 1]];
 		s.routes[vehicle_id].distance_cost += temp_distance_param * km_cost;
 		s.routes[vehicle_id].distance_parameter += temp_distance_param;
-
-		//cout << "distance cost " << s.routes[vehicle_id].distance_cost << "\n";
-		//cout << "distance parameter " << s.routes[vehicle_id].distance_parameter << "\n";
 	}
 	
 	s.routes[vehicle_id].route_cost += s.routes[vehicle_id].distance_cost;
@@ -464,6 +459,7 @@ void bereken_route_cost_zonder_recourse_actual_demand(problem& p, solution& s, i
 
 	s.routes[vehicle_id].route_cost_no_recourse += s.routes[vehicle_id].route_duration_no_recourse;
 }
+
 
 
 
@@ -658,54 +654,76 @@ void bereken_route_cost_actual_demand(problem& p, solution& s, int vehicle_id)
 }
 
 
+
 vector<double> calculate_probabilities(problem &p, solution &s, int vehicle_id)
 { // the probabilities that were put in the two vectors are used here as input. Furthermore, a specific route (with a certain vehicle id) is used as input as well.
 
 	s.routes[vehicle_id].probability = {}; // initially, there are no probabilities in the vector
 
-	vector<double> failure = probability_of_failure(p, s, vehicle_id); // the vector probability of failure in the previous function is used here.
-	//vector<double> failure{ 1,1,1 };
+	if (optimization == "stochastic") {
+		vector<double> failure = probability_of_failure(p, s, vehicle_id); // the vector probability of failure in the previous function is used here.
 
-	// For example: route 0 1 2 3 0, for this route there are different scenarios where a failure can occur, each with a corresponding probability which is calculated here.
+
+
+		// For example: route 0 1 2 3 0, for this route there are different scenarios where a failure can occur, each with a corresponding probability which is calculated here.
 
 	// double probability_of_failure_in_route = 1.00;
-	double probability_of_no_failure_in_route = 1.00;
-	/*Change by ahmed after discussing with Silia.. 
-	This should be probability_of_no_failure_in_route = 1 - the probability of failure at the last customer in the route before returing to the depot.
-	The reason is that in our code we are already calculating the Join Cummulative Distribution which represents the failure as the following:
-	failure_at_customer1, failure_at_customer1_and_2, failure_at_customer1_and_2_3, failure_at_customer1_and_2_3_4_N 
-	Then just reconstructing the probability vector */
-	// for (int i = 1; i < s.routes[vehicle_id].route.size() - 1; i++)
-	// {
+		double probability_of_no_failure_in_route = 1.00;
+		/*Change by ahmed after discussing with Silia..
+		This should be probability_of_no_failure_in_route = 1 - the probability of failure at the last customer in the route before returing to the depot.
+		The reason is that in our code we are already calculating the Join Cummulative Distribution which represents the failure as the following:
+		failure_at_customer1, failure_at_customer1_and_2, failure_at_customer1_and_2_3, failure_at_customer1_and_2_3_4_N
+		Then just reconstructing the probability vector */
+		// for (int i = 1; i < s.routes[vehicle_id].route.size() - 1; i++)
+		// {
 
-	// 	probability_of_no_failure_in_route *= (1 - failure[i]); // this represents the probability of having no failure in the route
-	// 															// in the example: 1 - 0 (probability of failure at customer 1) - 0.05 (probability of failure at customer 2) - 0.095 (probability of failure at customer 3) = 0.085
-	// }
+		// 	probability_of_no_failure_in_route *= (1 - failure[i]); // this represents the probability of having no failure in the route
+		// 															// in the example: 1 - 0 (probability of failure at customer 1) - 0.05 (probability of failure at customer 2) - 0.095 (probability of failure at customer 3) = 0.085
+		// }
 
-	// the probability of having no failure is put here in the first element of the vector
+		// the probability of having no failure is put here in the first element of the vector
 
-	// for (int i = 1; i < s.routes[vehicle_id].route.size() - 1; i++)
-	// {
+		// for (int i = 1; i < s.routes[vehicle_id].route.size() - 1; i++)
+		// {
 
-	// 	probability_of_failure_in_route = (1 - failure[i - 1]) * probability_of_failure_in_route;
-	// 	s.routes[vehicle_id].probability.push_back(failure[i] * probability_of_failure_in_route);
-	// 	// here the probabilities of failure at every customer are put in the next elements of the vector. It is assumed that only one failure can occur in a route.
-	// 	// Therefore, the probability of failure at the second customer is calculated by probability of failure at customer 2 times the probability of having no failure at customer 1.
-	// 	// in the example: probability of failure at customer 1 = 0
-	// 	// probability of failure at customer 2 = 0.05 * 1 (no failure at customer 1)
-	// 	// probability of failure at customer 3 = 0.10 * 0.95 (no failure at customer 1 and 2)
-	// }
-	probability_of_no_failure_in_route = 1 - failure[failure.size() - 2];
+		// 	probability_of_failure_in_route = (1 - failure[i - 1]) * probability_of_failure_in_route;
+		// 	s.routes[vehicle_id].probability.push_back(failure[i] * probability_of_failure_in_route);
+		// 	// here the probabilities of failure at every customer are put in the next elements of the vector. It is assumed that only one failure can occur in a route.
+		// 	// Therefore, the probability of failure at the second customer is calculated by probability of failure at customer 2 times the probability of having no failure at customer 1.
+		// 	// in the example: probability of failure at customer 1 = 0
+		// 	// probability of failure at customer 2 = 0.05 * 1 (no failure at customer 1)
+		// 	// probability of failure at customer 3 = 0.10 * 0.95 (no failure at customer 1 and 2)
+		// }
+		probability_of_no_failure_in_route = 1 - failure[failure.size() - 2];
 
-	s.routes[vehicle_id].probability.push_back(probability_of_no_failure_in_route);
-	//To Slice the route vector to execlude depot_node
-	auto first = failure.begin() + 1;
-	auto last = failure.end() - 1;
-	s.routes[vehicle_id].probability.insert(s.routes[vehicle_id].probability.end(), first, last);
-	return s.routes[vehicle_id].probability;
+		s.routes[vehicle_id].probability.push_back(probability_of_no_failure_in_route);
+		//To Slice the route vector to execlude depot_node
+		auto first = failure.begin() + 1;
+		auto last = failure.end() - 1;
+		s.routes[vehicle_id].probability.insert(s.routes[vehicle_id].probability.end(), first, last);
+		return s.routes[vehicle_id].probability;
 
-	// the probabilities calculated in this function are used in a further stage to calculate the route costs based on the different scenarios that can happen
-	// i.e. : no failure: 0 1 2 3 0 * corresponding probability, failure at second customer: 0 1 2 0 2 3 0 * corresponding probability, ...
+		// the probabilities calculated in this function are used in a further stage to calculate the route costs based on the different scenarios that can happen
+		// i.e. : no failure: 0 1 2 3 0 * corresponding probability, failure at second customer: 0 1 2 0 2 3 0 * corresponding probability, ...
+	}
+
+	else {
+		
+		vector<double>failure = { 1,1,1 };
+
+		double probability_of_no_failure_in_route = 1.00;
+
+		probability_of_no_failure_in_route = 1 - failure[failure.size() - 2];
+
+		s.routes[vehicle_id].probability.push_back(probability_of_no_failure_in_route);
+		auto first = failure.begin() + 1;
+		auto last = failure.end() - 1;
+		s.routes[vehicle_id].probability.insert(s.routes[vehicle_id].probability.end(), first, last);
+		return s.routes[vehicle_id].probability;
+
+	}
+	
+	
 }
 
 void construct_failure_routes(problem &p, solution &s1, solution &s2, int vehicle_id, int position)
@@ -1441,7 +1459,8 @@ void calculate_total_cost_actualdemand(problem& p, solution& s) {
 		s.total_distance_parameter = s.total_distance_parameter_without_recourse + s.total_distance_parameter_with_recourse;
 		s.total_route_duration = s.total_route_duration_without_recourse + s.total_route_duration_with_recourse;
 		s.total_route_duration_parameter = s.total_route_duration_parameter_without_recourse + s.total_route_duration_parameter_with_recourse;
-		
+
+
 
 	}
 
@@ -1526,8 +1545,6 @@ void update_earliest_time(problem &p, solution &s, int vehicle_id)
 		{
 			s.routes[vehicle_id].earliest_time[position] = p.nodes[s.routes[vehicle_id].route[position]].lower_tw;
 		}
-
-		//cout << "ET " << s.routes[vehicle_id].earliest_time[position] << "\n";
 	}
 }
 
@@ -1556,21 +1573,21 @@ void write_output_file(problem &p, solution &s)
 
 	// toevoegen: totale kost vlak voor perturbatie
 
-	output_file.open(("Results actual demand september test " + data_file + " day " + p.collection_date + " coordinates file " + coordinates_file  + ".txt"), std::ios_base::app);
+	output_file.open(("Results actual demand september test " + data_file + " day " + p.collection_date + " coordinates file " + coordinates_file + ".txt"), std::ios_base::app);
 	if (!output_file.is_open())
 	{
 		throw std::runtime_error("unable to open file: " + ("Results actual demand september test" + data_file + " day " + p.collection_date + " coordinates file " + coordinates_file + ".txt"));
 	}
 
 	output_file << "Data file: " << data_file
-		<< " Day " << p.collection_date << " coordinates_file " << coordinates_file /*<< "stopping_criteria " << value_no_improvement << " perturbation_percentage " << perturbation_percentage*/ << " resolution " << resolution << " TW_violation_penalty_cost " << time_window_violation_cost << " driving_time_violation_cost " << driving_time_violation_cost
-				<< " Vehicles: " << s.number_of_vehicles_used << " Vehicle_cost " << s.vehicle_cost <<  " Total_Distance: " << s.total_distance_cost << " Initial_Distance : " << s.total_distance_cost_without_recourse << " Recourse_Distance : " << s.total_distance_cost_with_recourse 
-				<< " Total_Distance_parameter: " << s.total_distance_parameter << " Initial_Distance_parameter: " << s.total_distance_parameter_without_recourse << " Recourse_Distance_parameter: " << s.total_distance_parameter_with_recourse 
-				<< " Total_Route_Duration: " << s.total_route_duration << " Initial_Route_Duration: " << s.total_route_duration_without_recourse << " Recourse_Route_Duration: " << s.total_route_duration_with_recourse
-				<< " Total_Route_Duration_parameter: " << s.total_route_duration_parameter << " Initial_Route_Duration_parameter: " << s.total_route_duration_parameter_without_recourse << " Recourse_Route_Duration_parameter: " << s.total_route_duration_parameter_with_recourse
-				<< " TW_violation: " << s.total_time_window_violation << " TW_violation_parameter: " << s.total_time_window_violation_parameter << " Overtime: " << s.total_overtime << " Overtime_parameter: " << s.total_overtime_parameter
-				<< " Driving_time_violation: " << s.total_driving_time_violation_parameter << " Driving_time_violation_parameter: " << s.total_driving_time_violation_parameter
-				<< " Total_Cost: " << s.total_cost << " Intial_Total_Cost: " << s.total_cost_without_recourse << " Recourse_Total_Cost: " << s.total_cost_with_recourse << "\n";
+		<< " Day " << p.collection_date << " coordinates_file " << coordinates_file /*<< "stopping_criteria " << value_no_improvement << " perturbation_percentage " << perturbation_percentage*/ /*<< " resolution " << resolution */<< " TW_violation_penalty_cost " << time_window_violation_cost << " driving_time_violation_cost " << driving_time_violation_cost
+		<< " Vehicles: " << s.number_of_vehicles_used << " Vehicle_cost " << s.vehicle_cost << " Total_Distance: " << s.total_distance_cost << " Initial_Distance : " << s.total_distance_cost_without_recourse << " Recourse_Distance : " << s.total_distance_cost_with_recourse
+		<< " Total_Distance_parameter: " << s.total_distance_parameter << " Initial_Distance_parameter: " << s.total_distance_parameter_without_recourse << " Recourse_Distance_parameter: " << s.total_distance_parameter_with_recourse
+		<< " Total_Route_Duration: " << s.total_route_duration << " Initial_Route_Duration: " << s.total_route_duration_without_recourse << " Recourse_Route_Duration: " << s.total_route_duration_with_recourse
+		<< " Total_Route_Duration_parameter: " << s.total_route_duration_parameter << " Initial_Route_Duration_parameter: " << s.total_route_duration_parameter_without_recourse << " Recourse_Route_Duration_parameter: " << s.total_route_duration_parameter_with_recourse
+		<< " TW_violation: " << s.total_time_window_violation << " TW_violation_parameter: " << s.total_time_window_violation_parameter << " Overtime: " << s.total_overtime << " Overtime_parameter: " << s.total_overtime_parameter
+		<< " Driving_time_violation: " << s.total_driving_time_violation_parameter << " Driving_time_violation_parameter: " << s.total_driving_time_violation_parameter
+		<< " Total_Cost: " << s.total_cost << " Intial_Total_Cost: " << s.total_cost_without_recourse << " Recourse_Total_Cost: " << s.total_cost_with_recourse << "\n";
 
 	//for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
 
@@ -1594,7 +1611,7 @@ void write_output_file(problem &p, solution &s)
 	//}
 
 	output_file << endl
-				<< endl;
+		<< endl;
 	output_file.close();
 }
 
@@ -1621,9 +1638,7 @@ void write_csv_output(problem &p, solution &s, std::string f_name)
 		output_file << "data_file,"
 					<< "collection_date,"
 					<< "coordinates_file,"
-					//<< "stopping_criteria, "
-					//<< "perturbation_percentage, "
-					<< "resolution,"
+					<< "distribution_file,"
 					<< "TW_violation_cost,"
 					<< "driving_time_violation_cost,"
 					<< "number_of_vehicles,"
@@ -1666,9 +1681,7 @@ void write_csv_output(problem &p, solution &s, std::string f_name)
 	output_file << data_file << ","
 				<< p.collection_date << ","
 				<< coordinates_file << ","
-				//<< value_no_improvement << ","
-				//<< perturbation_percentage << ","
-				<< resolution << ","
+				<< distribution_file << ","
 				<< time_window_violation_cost << ","
 				<< driving_time_violation_cost << ","
 				<< s.number_of_vehicles_used << ","
