@@ -35,13 +35,14 @@ void show_usage(std::string name)
 			  << "Usage: " << name << " arg1 arg2 arg3 ..... arg 6 | ARGUMENTS (Required)\n"
 			  << "---------------------------------------------------------------------\n"
 			  << "ARGUMENTS:\n"
+			  << "\toptimization: type of optimization e.g. deterministic\n"
 			  << "\tdata_file: A text file representing the dataset. E.g. Inputfile_tw2u.txt\n"
 			  << "\tcollection_date: A specific day to run the algorithm on. E.g. 3-Sep-2018\n"
 			  << "\tcoordinates_file: A text file representing an adjacency matrix of nodes. E.g. distance_matrix3sep.txt\n"
 			  << "\ttime_window_violation_cost: A double number. E.g. 0.5\n"
 			  << "\tdriving_time_violation_cost: A double number. E.g. 1000\n"
 			  << "\tdistribution_file: A text file with the distribution, each line is <order_id>,<given_demand>,... where ... are doubles representing a distribution\n"
-			  << "Example: " << name << " Inputfile_experiments_tw2u.txt 2-Jan-2018 distance_matrix\\ 2\\ jan.txt 14 0.5 1000 emp_2-Jan-2018_b137.csv"
+			  << "Example: " << name << " deterministic Inputfile_experiments_tw2u.txt `04-Sep-2018` distance_matrix4sep.txt 0 0 emp_04-Sep-2018_b137.csv"
 			  << std::endl;
 }
 // "General_Cargo_LTL_2018_v10072019_input_code adjusted tw.txt" "2-Jan-2018" "distance_matrix 2 jan.txt" 10 1000 10 "emp_04-Sep-2018_b137.csv"
