@@ -100,7 +100,7 @@ void read_data(problem &p)
 				current_node.service_dur = service_dur;
 
 				
-				cout << "collection date " << current_node.collection_date << "\n";
+				//cout << "collection date " << current_node.collection_date << "\n";
 				//cout << "unit description " << current_node.unit_description << "\n";
 				//cout << "delivery date " << current_node.delivery_date << "\n";
 
@@ -369,6 +369,8 @@ void bereken_route_cost_zonder_recourse(problem &p, solution &s, int vehicle_id)
 	{
 		s.routes[vehicle_id].route_cost = fixed_vehicle_cost;
 		s.routes[vehicle_id].route_used = 1;
+
+
 	}
 
 	s.routes[vehicle_id].distance_cost = 0.0;
@@ -535,17 +537,17 @@ void bereken_route_cost(problem &p, solution &s, int vehicle_id)
 
 	s.routes[vehicle_id].route_cost += s.routes[vehicle_id].route_duration;
 
-	// for (int position = 1; position < s.routes[vehicle_id].route.size(); position++)
-	// {
-	// 	if (s.routes[vehicle_id].earliest_time[position] > p.nodes[s.routes[vehicle_id].route[position]].upper_tw)
-	// 	{
-	// 		double temp_time_window_violation_parameter = s.routes[vehicle_id].earliest_time[position] - p.nodes[s.routes[vehicle_id].route[position]].upper_tw;
-	// 		s.routes[vehicle_id].time_window_violation += temp_time_window_violation_parameter * time_window_violation_cost;
-	// 		s.routes[vehicle_id].time_window_violation_parameter += temp_time_window_violation_parameter;
+	 //for (int position = 1; position < s.routes[vehicle_id].route.size(); position++)
+	 //{
+	 //	if (s.routes[vehicle_id].earliest_time[position] > p.nodes[s.routes[vehicle_id].route[position]].upper_tw)
+	 //	{
+	 //		double temp_time_window_violation_parameter = s.routes[vehicle_id].earliest_time[position] - p.nodes[s.routes[vehicle_id].route[position]].upper_tw;
+	 //		s.routes[vehicle_id].time_window_violation += temp_time_window_violation_parameter * time_window_violation_cost;
+	 //		s.routes[vehicle_id].time_window_violation_parameter += temp_time_window_violation_parameter;
 
-	// 		s.routes[vehicle_id].route_cost += s.routes[vehicle_id].time_window_violation;
-	// 	}
-	// }
+	 //		s.routes[vehicle_id].route_cost += s.routes[vehicle_id].time_window_violation;
+	 //	}
+	 //}
 
 	//cout << "time window violation " << s.routes[vehicle_id].time_window_violation << "\n";
 
@@ -653,14 +655,12 @@ void bereken_route_cost_actual_demand(problem& p, solution& s, int vehicle_id)
 	}
 }
 
-
-
 vector<double> calculate_probabilities(problem &p, solution &s, int vehicle_id)
 { // the probabilities that were put in the two vectors are used here as input. Furthermore, a specific route (with a certain vehicle id) is used as input as well.
 
 	s.routes[vehicle_id].probability = {}; // initially, there are no probabilities in the vector
 
-	if (optimization == "stochastic") {
+	if (optimization == "Stochastic") {
 		vector<double> failure = probability_of_failure(p, s, vehicle_id); // the vector probability of failure in the previous function is used here.
 
 
@@ -809,6 +809,7 @@ void bereken_gewogen_route_cost(problem &p, solution &s1, solution &s2, int vehi
 		//cout << "weighted route cost " << s1.routes[vehicle_id].weighted_route_cost << "\n";
 	}
 }
+
 
 void calculate_total_cost(problem &p, solution &s)
 {
@@ -1434,8 +1435,9 @@ void calculate_total_cost_actualdemand(problem& p, solution& s) {
 		//s.total_driving_time_violation += s.routes[vehicle_id].driving_time_violation;
 		//s.total_driving_time_violation_parameter += s.routes[vehicle_id].driving_time_violation_parameter;
 
-		s.number_of_vehicles_used += s.routes[vehicle_id].route_used_no_recourse;
-		s.vehicle_cost += s.routes[vehicle_id].route_used_no_recourse * fixed_vehicle_cost;
+		s.number_of_vehicles_used += s.routes[vehicle_id].route_used_no_recourse + s.routes[vehicle_id].route_used_recourse; // ok? 
+
+		s.vehicle_cost += (s.routes[vehicle_id].route_used_no_recourse + s.routes[vehicle_id].route_used_recourse) * fixed_vehicle_cost; // ok? 
 		s.total_cost_without_recourse += s.routes[vehicle_id].route_cost_no_recourse;
 		s.total_distance_cost_without_recourse += s.routes[vehicle_id].distance_cost_no_recourse;
 		s.total_distance_parameter_without_recourse += s.routes[vehicle_id].distance_parameter_no_recourse;
@@ -1573,11 +1575,13 @@ void write_output_file(problem &p, solution &s)
 
 	// toevoegen: totale kost vlak voor perturbatie
 
-	output_file.open(("Results actual demand september test " + data_file + " day " + p.collection_date + " coordinates file " + coordinates_file + ".txt"), std::ios_base::app);
+	output_file.open(("Results without recourse " + data_file + " day " + p.collection_date + " coordinates file " + coordinates_file + ".txt"), std::ios_base::app);
 	if (!output_file.is_open())
 	{
-		throw std::runtime_error("unable to open file: " + ("Results actual demand september test" + data_file + " day " + p.collection_date + " coordinates file " + coordinates_file + ".txt"));
+		throw std::runtime_error("unable to open file: " + ("Results without recourse" + data_file + " day " + p.collection_date + " coordinates file " + coordinates_file + ".txt"));
 	}
+
+	
 
 	output_file << "Data file: " << data_file
 		<< " Day " << p.collection_date << " coordinates_file " << coordinates_file /*<< "stopping_criteria " << value_no_improvement << " perturbation_percentage " << perturbation_percentage*/ /*<< " resolution " << resolution */<< " TW_violation_penalty_cost " << time_window_violation_cost << " driving_time_violation_cost " << driving_time_violation_cost
@@ -1589,14 +1593,157 @@ void write_output_file(problem &p, solution &s)
 		<< " Driving_time_violation: " << s.total_driving_time_violation_parameter << " Driving_time_violation_parameter: " << s.total_driving_time_violation_parameter
 		<< " Total_Cost: " << s.total_cost << " Intial_Total_Cost: " << s.total_cost_without_recourse << " Recourse_Total_Cost: " << s.total_cost_with_recourse << "\n";
 
-	//for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
 
-	//	output_file << endl << "- route " << vehicle_id << ": ";
-	//	for (int position = 0; position < s.routes[vehicle_id].route.size(); position++) {
-	//		output_file << s.routes[vehicle_id].route[position] << " ";
+		output_file << endl << "- route " << vehicle_id << " ";
+		for (int position = 0; position < s.routes[vehicle_id].route.size(); position++) {
+			output_file << s.routes[vehicle_id].route[position] << " ";
+		}
+
+		cout << "\n";
+
+		output_file << endl << "specified_demand ";
+		for (int position = 0; position < s.routes[vehicle_id].route.size(); position++) {
+			output_file << p.nodes[s.routes[vehicle_id].route[position]].specified_demand << " ";
+		}
+
+		cout << "\n";
+
+		output_file << endl << "Distance_cost: " << s.routes[vehicle_id].distance_cost << " Distance_parameter: " << s.routes[vehicle_id].weighted_distance_parameter
+			<< " Route_duration: " << s.routes[vehicle_id].weighted_route_duration << " Route_duration_parameter: " << s.routes[vehicle_id].weighted_route_duration_parameter << " Total_cost: " << s.routes[vehicle_id].weighted_route_cost;
+		output_file;
+	}
+
+	//for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+	//{
+
+	//	output_file << endl
+	//				<< "s_curr.routes[" << vehicle_id << "].route = { ";
+	//	for (int position = 0; position < s.routes[vehicle_id].route.size() - 1; position++)
+	//	{
+	//		output_file << s.routes[vehicle_id].route[position] << ", ";
 	//	}
-	//	output_file;
+	//	output_file << s.routes[vehicle_id].route[0] << " };";
 	//}
+
+	output_file << endl
+		<< endl;
+	output_file.close();
+}
+
+void write_output_file_actual_demand(problem& p, solution& s)
+{ // nog toevoegen over welk scenario (experiment) het gaat
+
+	ofstream output_file;
+
+	// toevoegen: totale kost vlak voor perturbatie
+
+	output_file.open(("Results recourse afterwards actual demand " + data_file + " day " + p.collection_date + " coordinates file " + coordinates_file + ".txt"), std::ios_base::app);
+	if (!output_file.is_open())
+	{
+		throw std::runtime_error("unable to open file: " + ("Results recourse afterwards actual demand" + data_file + " day " + p.collection_date + " coordinates file " + coordinates_file + ".txt"));
+	}
+
+	//oude versie!!!
+	//output_file << "Data file: " << data_file
+	//	<< " Day " << p.collection_date << " coordinates_file " << coordinates_file /*<< "stopping_criteria " << value_no_improvement << " perturbation_percentage " << perturbation_percentage*/ /*<< " resolution " << resolution */ << " TW_violation_penalty_cost " << time_window_violation_cost << " driving_time_violation_cost " << driving_time_violation_cost
+	//	<< " Vehicles: " << s.number_of_vehicles_used << " Vehicle_cost " << s.vehicle_cost << " Total_Distance: " << s.total_distance_cost << " Initial_Distance : " << s.total_distance_cost_without_recourse << " Recourse_Distance : " << s.total_distance_cost_with_recourse
+	//	<< " Total_Distance_parameter: " << s.total_distance_parameter << " Initial_Distance_parameter: " << s.total_distance_parameter_without_recourse << " Recourse_Distance_parameter: " << s.total_distance_parameter_with_recourse
+	//	<< " Total_Route_Duration: " << s.total_route_duration << " Initial_Route_Duration: " << s.total_route_duration_without_recourse << " Recourse_Route_Duration: " << s.total_route_duration_with_recourse
+	//	<< " Total_Route_Duration_parameter: " << s.total_route_duration_parameter << " Initial_Route_Duration_parameter: " << s.total_route_duration_parameter_without_recourse << " Recourse_Route_Duration_parameter: " << s.total_route_duration_parameter_with_recourse
+	//	<< " TW_violation: " << s.total_time_window_violation << " TW_violation_parameter: " << s.total_time_window_violation_parameter << " Overtime: " << s.total_overtime << " Overtime_parameter: " << s.total_overtime_parameter
+	//	<< " Driving_time_violation: " << s.total_driving_time_violation_parameter << " Driving_time_violation_parameter: " << s.total_driving_time_violation_parameter
+	//	<< " Total_Cost: " << s.total_cost << " Intial_Total_Cost: " << s.total_cost_without_recourse << " Recourse_Total_Cost: " << s.total_cost_with_recourse << "\n";
+
+	double tot_dist_cost_zonder_recourse = 0.0;
+	double tot_dist_par_zonder_recourse = 0.0;
+	double tot_route_dur_zonder_recourse = 0.0;
+	double tot_route_dur_par_zonder_recourse = 0.0;
+	double tot_cost_zonder_recourse = 0.0;
+
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+		tot_dist_cost_zonder_recourse += s.routes[vehicle_id].distance_cost;
+		tot_dist_par_zonder_recourse += s.routes[vehicle_id].distance_parameter;
+		tot_route_dur_zonder_recourse += s.routes[vehicle_id].route_duration;
+		tot_route_dur_par_zonder_recourse += s.routes[vehicle_id].route_duration_parameter;
+		tot_cost_zonder_recourse += s.routes[vehicle_id].route_cost; 
+	}
+
+	output_file << "Data file: " << data_file
+		<< " Day " << p.collection_date << " coordinates_file " << coordinates_file /*<< "stopping_criteria " << value_no_improvement << " perturbation_percentage " << perturbation_percentage*/ /*<< " resolution " << resolution */ << " TW_violation_penalty_cost " << time_window_violation_cost << " driving_time_violation_cost " << driving_time_violation_cost
+		<< " Vehicles: " << s.number_of_vehicles_used << " Vehicle_cost " << s.vehicle_cost << " Distance_cost_zonder_recourse " << tot_dist_cost_zonder_recourse << " Distance_cost_met_recourse: " << s.total_distance_cost
+		<< " Distance_parameter_zonder_recourse " << tot_dist_par_zonder_recourse << " Distance_parameter_met_recourse: " << s.total_distance_parameter 
+		<< " Route_duration_zonder_recourse " << tot_route_dur_zonder_recourse << " Route_Duration_met_recourse: " << s.total_route_duration 
+		<< " Route_duration_parameter_zonder_recourse " << tot_route_dur_par_zonder_recourse << " Route_Duration_parameter_met_recourse: " << s.total_route_duration_parameter
+		<< " TW_violation: " << s.total_time_window_violation << " TW_violation_parameter: " << s.total_time_window_violation_parameter << " Overtime: " << s.total_overtime << " Overtime_parameter: " << s.total_overtime_parameter
+		<< " Driving_time_violation: " << s.total_driving_time_violation_parameter << " Driving_time_violation_parameter: " << s.total_driving_time_violation_parameter
+		<< " Total_Cost_zonder_recourse: " << tot_cost_zonder_recourse << " Total_Cost_met_recourse: " << s.total_cost << "\n";
+
+
+
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+
+		output_file << endl << "route" << vehicle_id;
+		for (int position = 0; position < s.routes[vehicle_id].route.size(); position++) {
+			output_file << " "<< s.routes[vehicle_id].route[position] << " ";
+
+		}
+
+		cout << "\n";
+
+		output_file << endl << "specified_demand ";
+		for (int position = 0; position < s.routes[vehicle_id].route.size(); position++) {
+			output_file << p.nodes[s.routes[vehicle_id].route[position]].specified_demand << " ";
+		}
+
+		cout << "\n";
+
+		output_file << endl << "sum_specified_demand ";
+		double sum_spec_demand = 0.0;
+
+		for (int position = 0; position < s.routes[vehicle_id].route.size(); position++) {
+			sum_spec_demand += p.nodes[s.routes[vehicle_id].route[position]].specified_demand;
+			output_file << sum_spec_demand << " ";
+		}
+
+		cout << "\n";
+
+		//output_file << endl << "sum_specified_demand " << ;
+
+		output_file << endl << "actual_demand ";
+		for (int position = 0; position < s.routes[vehicle_id].route.size(); position++) {
+			output_file << p.nodes[s.routes[vehicle_id].route[position]].actual_demand << " ";
+		}
+
+		cout << "\n";
+
+		output_file << endl << "sum_actual_demand ";
+		double sum_act_demand = 0.0;
+
+		for (int position = 0; position < s.routes[vehicle_id].route.size(); position++) {
+			sum_act_demand += p.nodes[s.routes[vehicle_id].route[position]].actual_demand;
+			output_file << sum_act_demand << " ";
+		}
+
+		cout << "\n";
+
+		output_file << endl << "Distance_cost: " << s.routes[vehicle_id].distance_cost << " Distance_parameter: " << s.routes[vehicle_id].weighted_distance_parameter
+			<< " Route_duration: " << s.routes[vehicle_id].weighted_route_duration << " Route_duration_parameter: " << s.routes[vehicle_id].weighted_route_duration_parameter << " Total_cost: " << s.routes[vehicle_id].weighted_route_cost;
+
+		cout << "\n";
+
+		output_file << endl << "Distance_cost_no_recourse: " << s.routes[vehicle_id].distance_cost_no_recourse << " Distance_cost_recourse: " << s.routes[vehicle_id].distance_cost_recourse
+			<< " Distance_parameter_no_recourse: " << s.routes[vehicle_id].distance_parameter_no_recourse << " Distance_parameter_recourse: " << s.routes[vehicle_id].distance_parameter_recourse
+			<< " Route_duration_no_recourse: " << s.routes[vehicle_id].route_duration_no_recourse << " Route_duration_recourse: " << s.routes[vehicle_id].route_duration_recourse
+			<< " Route_duration_parameter_no_recourse: " << s.routes[vehicle_id].route_duration_parameter_no_recourse << " Route_duration_parameter_recourse: " << s.routes[vehicle_id].route_duration_parameter_recourse
+			<< " Time_window_violation: " << s.routes[vehicle_id].time_window_violation_recourse << " Time_window_violation_parameter: " << s.routes[vehicle_id].time_window_violation_parameter_recourse
+			<< " Overtime: " << s.routes[vehicle_id].overtime_recourse << " Overtime_parameter: " << s.routes[vehicle_id].overtime_recourse
+			<< " Driving_time_violation: " << s.routes[vehicle_id].driving_time_violation_recourse << " Driving_time_violation_parameter: " << s.routes[vehicle_id].driving_time_violation_recourse
+			<< " Total_cost_no_recourse: " << s.routes[vehicle_id].route_cost_no_recourse << " Total_cost_recourse: " << s.routes[vehicle_id].route_cost_recourse;
+		output_file;
+
+		
+	}
 
 	//for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
 	//{
@@ -1617,6 +1764,8 @@ void write_output_file(problem &p, solution &s)
 
 void write_csv_output(problem &p, solution &s, std::string f_name)
 {
+
+
 	fstream output_file;
 
 	// toevoegen: totale kost vlak voor perturbatie
@@ -1643,27 +1792,22 @@ void write_csv_output(problem &p, solution &s, std::string f_name)
 					<< "driving_time_violation_cost,"
 					<< "number_of_vehicles,"
 					<< "vehicle_cost,"
-					<< "total_distance_cost,"
-					<< "initial_distance_cost,"
-					<< "recourse_distance_cost,"
-					<< "total_distance_parameter,"
-					<< "initial_distance_parameter,"
-					<< "recourse_distance_parameter,"
-					<< "total_route_duration,"
-					<< "initial_route_duration,"
-					<< "recourse_route_duration,"
-					<< "total_route_duration_parameter,"
-					<< "initial_route_duration_parameter,"
-					<< "recourse_route_duration_parameter,"
+					<< "Distance_cost_zonder_recourse,"
+					<< "Distance_cost_met_recourse," 
+					<< "Distance_parameter_zonder_recourse,"
+					<< "Distance_parameter_met_recourse,"
+					<< "total_route_duration_zonder_recourse,"
+					<< "total_route_duration_met_recourse,"
+					<< "total_route_duration_parameter_zonder_recourse,"
+					<< "total_route_duration_parameter_met_recourse,"
 					<< "time_window_violation,"
 					<< "time_window_violation_parameter,"
 					<< "overtime,"
 					<< "overtime_parameter,"
 					<< "driving_time_violation,"
 					<< "driving_time_violation_parameter,"
-					<< "total_cost,"
-					<< "initial_total_cost,"
-					<< "recourse_total_cost,"
+					<< "total_cost_met_recourse,"
+					<< "total_cost_zonder_recourse,"
 					<< "\n";
 	}
 	//If the file as input could be opened, that means the file exist. 
@@ -1677,6 +1821,21 @@ void write_csv_output(problem &p, solution &s, std::string f_name)
 			throw std::runtime_error("unable to open file: " + (file_name));
 		}
 	}
+
+	double tot_dist_cost_zonder_recourse = 0.0;
+	double tot_dist_par_zonder_recourse = 0.0;
+	double tot_route_dur_zonder_recourse = 0.0;
+	double tot_route_dur_par_zonder_recourse = 0.0;
+	double tot_cost_zonder_recourse = 0.0;
+
+	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+		tot_dist_cost_zonder_recourse += s.routes[vehicle_id].distance_cost;
+		tot_dist_par_zonder_recourse += s.routes[vehicle_id].distance_parameter;
+		tot_route_dur_zonder_recourse += s.routes[vehicle_id].route_duration;
+		tot_route_dur_par_zonder_recourse += s.routes[vehicle_id].route_duration_parameter;
+		tot_cost_zonder_recourse += s.routes[vehicle_id].route_cost;
+	}
+
 	//Here the file will be exist and 
 	output_file << data_file << ","
 				<< p.collection_date << ","
@@ -1686,26 +1845,23 @@ void write_csv_output(problem &p, solution &s, std::string f_name)
 				<< driving_time_violation_cost << ","
 				<< s.number_of_vehicles_used << ","
 				<< s.vehicle_cost << ","
-				<< s.total_distance_cost << ","
-				<< s.total_distance_cost_without_recourse << ","
-				<< s.total_distance_cost_with_recourse << ","
+				<< tot_dist_cost_zonder_recourse << ","
+				<< s.total_distance_cost << "," // distance cost met recourse
+				<< tot_dist_par_zonder_recourse << ","
 				<< s.total_distance_parameter << ","
-				<< s.total_distance_parameter_without_recourse << ","
-				<< s.total_distance_parameter_with_recourse << ","
+				<< tot_route_dur_zonder_recourse << ","
 				<< s.total_route_duration << ","
-				<< s.total_route_duration_without_recourse << ","
-				<< s.total_route_duration_with_recourse << ","
+				<< tot_route_dur_par_zonder_recourse << ","
 				<< s.total_route_duration_parameter << ","
-				<< s.total_route_duration_parameter_without_recourse << ","
-				<< s.total_route_duration_parameter_with_recourse << ","
 				<< s.total_time_window_violation << ","
 				<< s.total_time_window_violation_parameter << ","
 				<< s.total_overtime << ","
 				<< s.total_overtime_parameter << ","
 				<< s.total_driving_time_violation << ","
 				<< s.total_driving_time_violation_parameter << ","
+				<< tot_cost_zonder_recourse << "," 
 				<< s.total_cost << ","
-				<< s.total_cost_without_recourse << ","
-				<< s.total_cost_with_recourse << "\n";
+	
+				<< "\n";
 	output_file.close();
 }

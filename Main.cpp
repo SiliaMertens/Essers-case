@@ -89,13 +89,13 @@ int main(int argc, char *argv[])
 
 		try
 		{
-			optimization = argv[1]; /*"deterministic"; */
-			data_file = argv[2]; /*"C:\\Users\\lucp9937\\source\\repos\\SiliaMertens\\Essers-case\\Inputfile_experiments_tw2u_4sep4customers.txt";*/
-			p.collection_date = argv[3];/* "04-Sep-2018";*/
-			coordinates_file = argv[4]; /*"C:\\Users\\lucp9937\\source\\repos\\SiliaMertens\\Essers-case\\distance_matrix4sep_4customers.txt";*/
+			optimization = argv[1]; /*"Stochastic";*/
+			data_file = argv[2]; /*"C:\\Users\\lucp9937\\source\\repos\\SiliaMertens\\Essers-case\\Inputfile_experiments_tw2u0.txt";*/
+			p.collection_date = argv[3]; /*"04-Sep-2018";*/
+			coordinates_file = argv[4]; /*"C:\\Users\\lucp9937\\source\\repos\\SiliaMertens\\Essers-case\\distance_matrix4sep.txt";*/
 			time_window_violation_cost = stod(argv[5]);  /*stod("1");*/
 			driving_time_violation_cost = stod(argv[6]); /*stod("1");*/
-			distribution_file = argv[7]; /*"C:\\Users\\lucp9937\\source\\repos\\SiliaMertens\\Essers-case\\emp_04-Sep-2018_b137.csv";*/
+			distribution_file = argv[7]; /*"C:\\Users\\lucp9937\\source\\repos\\SiliaMertens\\Essers-case\\emp_04-Sep-2018_b1370.csv";*/
 			
 			
 
@@ -191,15 +191,34 @@ int main(int argc, char *argv[])
 	cout << "Initial solution with " << s_local_best.number_of_vehicles_used << " vehicles and distance " << s_local_best.total_distance_cost << " distance_parameter " << s_local_best.total_distance_parameter
 		 << " route duration " << s_local_best.total_route_duration << " route duration parameter " << s_local_best.total_route_duration_parameter << " time window violation " << s_local_best.total_time_window_violation << " time window violation parameter " << s_local_best.total_time_window_violation_parameter << " overtime " << s_local_best.total_overtime << " overtime_parameter " << s_local_best.total_overtime_parameter << " driving time violation " << s_local_best.total_driving_time_violation << " driving time violation parameter " << s_local_best.total_driving_time_violation_parameter << " total cost " << s_local_best.total_cost << "\n";
 
-	for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
-	{
-		for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
-		{
-			cout << s_local_best.routes[vehicle_id].route[position] << " ";
-		}
+	//for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+	//{
+	//	for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
+	//	{
+	//		cout << s_local_best.routes[vehicle_id].route[position] << " ";
+	//		//cout << "specified demand " << p.nodes[s_local_best.routes[vehicle_id].route[position]].specified_demand << " ";
+	//		//cout << " actual demand " << p.nodes[s_local_best.routes[vehicle_id].route[position]].actual_demand << " ";
+	//	
+	//	}
 
-		cout << "\n";
-	}
+	//	//cout << "cost normal " << s_local_best.routes[vehicle_id].weighted_route_cost << " with " << s_local_best.routes[vehicle_id].weighted_route_cost_with_recourse << " without " 
+	//	//	<< s_local_best.routes[vehicle_id].weighted_route_cost_without_recourse << " TW " << s_local_best.routes[vehicle_id].weighted_time_window_violation << "\n";
+
+	//	//cout << " route cost " << s_local_best.routes[vehicle_id].route_cost << " no recourse "<< s_local_best.routes[vehicle_id].route_cost_no_recourse << " recourse " << s_local_best.routes[vehicle_id].route_cost_recourse << "\n";
+
+	//	//cout << "\n";
+	//}
+
+	//for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++)
+	//{
+	//	for (size_t position = 0; position < s_local_best.routes[vehicle_id].route.size(); position++)
+	//	{
+
+	//		cout << s_local_best.routes[vehicle_id].weighted_route_cost << " ";
+	//	}
+
+	//	cout << "\n";
+	//}
 
 	update_solution(s_local_best, s_total_best);
 	update_solution(s_local_best, s_ILS_best);
@@ -594,7 +613,7 @@ int main(int argc, char *argv[])
 
 		cout << "\n";
 
-
+		//write_output_file(p, s_ILS_best);
 
 		update_solution(s_ILS_best, s_actual);
 
@@ -607,8 +626,94 @@ int main(int argc, char *argv[])
 
 		cout << "total cost actual demand " << s_actual.total_cost << "\n";
 
-		//write_output_file(p, s_ILS_best);
-		write_output_file(p, s_actual);
+		cout << "\nBeste route " << s_actual.number_of_vehicles_used << " vehicles and distance " << s_actual.total_distance_cost
+			<< " route duration " << s_actual.total_route_duration << " time window violation " << s_actual.total_time_window_violation <<
+			" overtime " << s_actual.total_overtime << " driving time violation " << s_actual.total_driving_time_violation << " total cost " << s_actual.total_cost << "\n";
+
+
+		for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+
+			cout << "route" << vehicle_id;
+			for (int position = 0; position < s_actual.routes[vehicle_id].route.size(); position++) {
+				cout << " " << s_actual.routes[vehicle_id].route[position] << " ";
+
+			}
+
+			cout << "\n";
+
+			cout << "specified_demand ";
+			for (int position = 0; position < s_actual.routes[vehicle_id].route.size(); position++) {
+				cout << p.nodes[s_actual.routes[vehicle_id].route[position]].specified_demand << " ";
+			}
+
+			cout << "\n";
+
+			cout << "sum_specified_demand ";
+
+			double sum_spec_demand = 0.0;
+
+			for (int position = 0; position < s_actual.routes[vehicle_id].route.size(); position++) {
+				sum_spec_demand += p.nodes[s_actual.routes[vehicle_id].route[position]].specified_demand;
+				cout << sum_spec_demand << " ";
+			}
+
+			cout << "\n";
+
+			//output_file << endl << "sum_specified_demand " << ;
+
+			cout << "actual_demand ";
+			for (int position = 0; position < s_actual.routes[vehicle_id].route.size(); position++) {
+				cout << p.nodes[s_actual.routes[vehicle_id].route[position]].actual_demand << " ";
+			}
+
+			cout << "\n";
+
+			cout << "sum_actual_demand ";
+
+			double sum_actual_demand = 0.0;
+
+			for (int position = 0; position < s_actual.routes[vehicle_id].route.size(); position++) {
+				sum_actual_demand += p.nodes[s_actual.routes[vehicle_id].route[position]].actual_demand;
+				cout << sum_actual_demand << " ";
+			}
+
+			cout << "\n";
+
+			/*		cout << "number_of_vehicles " << s_actual.number_of_vehicles_used << "\n";*/
+
+			cout << "Distance_cost: " << s_actual.routes[vehicle_id].distance_cost << " Distance_parameter: " << s_actual.routes[vehicle_id].weighted_distance_parameter
+				<< " Route_duration: " << s_actual.routes[vehicle_id].weighted_route_duration << " Route_duration_parameter: " << s_actual.routes[vehicle_id].weighted_route_duration_parameter << " Total_cost: " << s_actual.routes[vehicle_id].weighted_route_cost;
+
+			cout << "\n";
+
+			cout << "Distance_cost_no_recourse: " << s_actual.routes[vehicle_id].distance_cost_no_recourse << " Distance_cost_recourse: " << s_actual.routes[vehicle_id].distance_cost_recourse
+				<< " Distance_parameter_no_recourse: " << s_actual.routes[vehicle_id].distance_parameter_no_recourse << " Distance_parameter_recourse: " << s_actual.routes[vehicle_id].distance_parameter_recourse
+				<< " Route_duration_no_recourse: " << s_actual.routes[vehicle_id].route_duration_no_recourse << " Route_duration_recourse: " << s_actual.routes[vehicle_id].route_duration_recourse
+				<< " Route_duration_parameter_no_recourse: " << s_actual.routes[vehicle_id].route_duration_parameter_no_recourse << " Route_duration_parameter_recourse: " << s_actual.routes[vehicle_id].route_duration_parameter_recourse
+				<< " Time_window_violation: " << s_actual.routes[vehicle_id].time_window_violation_recourse << " Time_window_violation_parameter: " << s_actual.routes[vehicle_id].time_window_violation_parameter_recourse
+				<< " Overtime: " << s_actual.routes[vehicle_id].overtime_recourse << " Overtime_parameter: " << s_actual.routes[vehicle_id].overtime_recourse
+				<< " Driving_time_violation: " << s_actual.routes[vehicle_id].driving_time_violation_recourse << " Driving_time_violation_parameter: " << s_actual.routes[vehicle_id].driving_time_violation_recourse
+				<< " Total_cost_no_recourse: " << s_actual.routes[vehicle_id].route_cost_no_recourse << " Total_cost_recourse: " << s_actual.routes[vehicle_id].route_cost_recourse;
+
+			cout << "\n";
+
+	
+		
+			//write_output_file(p, s_ILS_best);
+
+		}
+
+		double tot_dist_cost = 0.0;
+		for (int vehicle_id = 0; vehicle_id < p.n_vehicles; vehicle_id++) {
+			tot_dist_cost += s_actual.routes[vehicle_id].distance_cost;
+		}
+
+		cout << "tot_dist_cost " << tot_dist_cost << "\n";
+		//cout << "total_distance " << s_actual.total_distance_cost << "\n";
+		//cout << "total_distance_without_recourse " << s_actual.total_distance_cost_without_recourse << "\n";
+		//cout << "total_distance_with_recourse " << s_actual.total_distance_cost_with_recourse << "\n";
+
+		write_output_file_actual_demand(p, s_actual);
 
 		auto stop = chrono::high_resolution_clock::now();
 

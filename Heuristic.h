@@ -206,6 +206,7 @@ std::vector<double> probability_of_failure(problem &p, solution &s, int vehicle_
 
 /* Output */
 void write_output_file(problem &p, solution &s);
+void write_output_file_actual_demand(problem& p, solution& s);
 void write_csv_output(problem& p, solution& s, std::string f_name);
 
 #endif
