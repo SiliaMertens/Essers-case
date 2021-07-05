@@ -19,17 +19,22 @@ inline double DiscreteDistribution::accumulateResult(const std::vector<double> &
     //std::max(double,double): to fix floating point precision issues.
     return std::max(0.0, (1 - sum_of_elems));
 }
-inline double DiscreteDistribution::convolution(int v, const std::vector<double> &probabDistOne, const std::vector<double> &probabDistTwo)
+inline double DiscreteDistribution::convolution(int v, const std::vector<double> &probabDistOne, const std::vector<double> &probabDistTwo, const int l2, const int u2)
 {
+    // probabilities of bins reaching unit value 'v':
+    // 0+v, 1+(v-1), ..., v+0
+    // but index '0' is value '1'!
+    // so skip 0+v and v+0: 1+(v-1), 2+(v-2), ..., (v-1)+1   and then from value to index, another -1
     double convSum = 0.0;
-    for (int w = 1; w < v; w++)
+    // now, we assume 'Two' is the shortest, and we range only from min/max of that
+    for (int w = std::max(1,l2+1); w <= std::min(v-1,u2+1); w++)
     {
         /*
         v: can be a value between 1..b
-        For example with b = 10, proba_d2[0] = P(D2=1.37)
+        For example with b = 10, proba_d2[0] = P(D2='1 unit') = P(D2=1.37)
         Lists are 0-indexed, each index (i.e. proba_d2[w - 1]) represent the probability of that interval w.
         */
-        convSum += probabDistTwo[w - 1] * probabDistOne[v - w - 1];
+        convSum += probabDistTwo[(w)-1] * probabDistOne[(v - w)-1];
     }
 
     return convSum;
@@ -42,18 +47,35 @@ inline std::vector<double> DiscreteDistribution::cdf(const std::vector<double> &
             "DiscreteDistribution::cdf() -> The probability distributions are not equal in size! " + std::to_string(probabDistOne.size()) + " != " + std::to_string(probabDistTwo.size()));
     }
     /*
-    - P(v = 0) = 0, and start from v = 1 ... b = v + 1
-    - The range of v represented here in i as the 0-index, therefore start from index 1
-    - (i.e. index 1 means the conceptual b = 2)
-    - b: nbinsHisto is the number of bins in histogram which is equal to the length of the client distribution.
-    - The +1 in nbinsHisto, is to make sure that the last value of v = b (which will be also shifted by -1 in Cdf).
+    - P(v = 0) = 0, and so the probab array starts from v = 1 ... b
+    - so, at the '0'th index, it represents the probability of 1 unit, at the kth index, the probability of k-1 units
     */
-    int nbinsHisto = probabDistTwo.size() + 1;
-    std::vector<double> jointDist;
-    for (int i = 1; i < nbinsHisto; i++)
+    int s = probabDistOne.size();
+    
+    // min and max non-zero value
+    //int l1 = 0; int u1 = 0;
+    int l2 = 0; int u2 = 0;
+    for (int i=0; i < s; i++) {
+        /*
+        if (probabDistOne[i] > 0) {
+            u1 = i; // non-zero
+        } else if (u1 == 0) { // no non-zero yet
+            l1 = i;
+        }
+        */
+        if (probabDistTwo[i] > 0) {
+            u2 = i; // non-zero
+        } else if (u2 == 0) { // no non-zero yet
+            l2 = i;
+        }            
+    }
+    //std::cout <<" l2,u2 "<<l2<<","<<u2<<"\n";
+    
+    std::vector<double> jointDist(s, 0.0); // always 0..b-1
+    for (int v = 2; v <= s; v++) // v=1 impossible in combo because both are non-zero
     {
-        double currentCdf = this->convolution(i, probabDistOne, probabDistTwo);
-        jointDist.push_back(currentCdf);
+        jointDist[v-1] = this->convolution(v, probabDistOne, probabDistTwo, l2,u2);
+        //std::cout << "debug conv"<<v<<", One: "<<probabDistOne[v-1] << " Two: " <<probabDistTwo[v-1] << " conv: "<<jointDist[v-1]<<" prev:"<<jointDist[v-2]<<"\n";
     }
     return jointDist;
 }

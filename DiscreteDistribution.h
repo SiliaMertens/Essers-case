@@ -5,7 +5,7 @@
 class DiscreteDistribution : public ProbabilityEstimator
 {
 private:
-    double convolution(int v, const std::vector<double> &probabDistOne, const std::vector<double> &probabDistTwo);
+    double convolution(int v, const std::vector<double> &probabDistOne, const std::vector<double> &probabDistTwo, const int l2, const int u2);
     std::vector<double> cdf(const std::vector<double> &probabDistOne, const std::vector<double> &probabDistTwo);
 
 protected:
