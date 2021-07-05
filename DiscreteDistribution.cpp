@@ -89,14 +89,19 @@ std::vector<double> DiscreteDistribution::jointCDF(const std::vector<std::vector
     }
     // Vector represent the accumulative result of the joint CDF .
     std::vector<double> accuJoRes;
-    std::vector<double> prevDist(empricialDists[0]);
-    accuJoRes.push_back(this->accumulateResult(prevDist));
-    for (int i = 1; i < nrOfDists; i++)
-    {
-        std::vector<double> currCdfDist = this->cdf(prevDist, empricialDists[i]);
-        accuJoRes.push_back(this->accumulateResult(currCdfDist));
-        //Vector assigment is a deep-copy in case of vectors, not like arrays (i.e. not passed by reference).
-        prevDist = currCdfDist;
+    // first distr
+    accuJoRes.push_back(this->accumulateResult(empricialDists[0]));
+    
+    // if more than one
+    if (nrOfDists > 1) {
+        std::vector<double> prevDist(empricialDists[0]);
+        for (int i = 1; i < nrOfDists; i++)
+        {
+            std::vector<double> currCdfDist = this->cdf(prevDist, empricialDists[i]);
+            accuJoRes.push_back(this->accumulateResult(currCdfDist));
+            //Vector assigment is a deep-copy in case of vectors, not like arrays (i.e. not passed by reference).
+            prevDist = currCdfDist;
+        }
     }
     return accuJoRes;
 }

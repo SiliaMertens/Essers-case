@@ -1325,6 +1325,10 @@ vector<double> probability_of_failure(problem &p, solution &s, int vehicle_id)
 		auto last = s.routes[vehicle_id].route.end() - 1;
 		// Should be equal to the number of clients in the current route.
 		std::vector<int> customersIDs(first, last);
+        std::cout << "get Joint of route: ";
+        for (const auto& i: customersIDs)
+            std::cout << i << ' ';
+        std::cout<<"\n";
 		// for (int i = 0, max = s.routes[vehicle_id].route.size(); i < max; i++)
 		// {
 		// 	cout << " original route: " << s.routes[vehicle_id].route[i] << endl;
