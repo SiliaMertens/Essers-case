@@ -1325,19 +1325,19 @@ vector<double> probability_of_failure(problem &p, solution &s, int vehicle_id)
 		auto last = s.routes[vehicle_id].route.end() - 1;
 		// Should be equal to the number of clients in the current route.
 		std::vector<int> customersIDs(first, last);
-        std::cout << "get Joint of route: ";
-        for (const auto& i: customersIDs)
-            std::cout << i << ' ';
-        std::cout<<"\n";
-		// for (int i = 0, max = s.routes[vehicle_id].route.size(); i < max; i++)
-		// {
-		// 	cout << " original route: " << s.routes[vehicle_id].route[i] << endl;
-		// }
-		std::vector<std::vector<double>> emplDists = p.pe->getEmpricialDistributions(customersIDs);
-		vector<double> jointCdfRes = p.pe->jointCDF(emplDists);
-		failure.insert(failure.end(), jointCdfRes.begin(), jointCdfRes.end());
-		// End with 0 for depot point.
-		failure.push_back(0.0);
+
+        if (p.probmap.find(customersIDs) != p.probmap.end()) {
+            // in cache!! don't recompute, just return
+            failure = p.probmap[customersIDs];
+        } else {
+            std::vector<std::vector<double>> emplDists = p.pe->getEmpricialDistributions(customersIDs);
+            vector<double> jointCdfRes = p.pe->jointCDF(emplDists);
+            failure.insert(failure.end(), jointCdfRes.begin(), jointCdfRes.end());
+            // End with 0 for depot point.
+            failure.push_back(0.0);
+            // store in cache
+            p.probmap[customersIDs] = failure;
+        }
 	}
 
 	return failure;

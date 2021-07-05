@@ -1,6 +1,7 @@
 #ifndef HEADER_H
 #define HEADER_H
 
+#include <map>
 #include "ProbabilityEstimator.h"
 
 #pragma once
@@ -57,6 +58,7 @@ struct problem
 	std::vector<std::vector<double>> distance_matrix;
 	std::vector<std::vector<double>> time_matrix;
 	ProbabilityEstimator* pe;
+    std::map<const std::vector<int>, std::vector<double> > probmap;
 };
 struct route
 {
