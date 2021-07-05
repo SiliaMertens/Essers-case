@@ -1149,7 +1149,8 @@ void perform_best_insertion_for_swap(problem &p, solution &s, int customer_id, i
 			}
 
 			remove_customer(p, s_try, vehicle_id, position);
-			bereken_gewogen_route_cost(p, s_try, s_recourse, vehicle_id);
+			// XXX Onderstaande lijn 30% van rekentijd, maar niet nodig?? de gewogen cost wordt hereberekend na insertion als die voorwaardes satisfied heirboven...
+            // bereken_gewogen_route_cost(p, s_try, s_recourse, vehicle_id);
 		}
 
 		if (s.routes[vehicle_id].route.size() == 2)
@@ -1267,7 +1268,8 @@ void perform_best_insertion(problem &p, solution &s, int customer_id)
 				}
 
 				remove_customer(p, s_try, vehicle_id, position);
-				bereken_gewogen_route_cost(p, s_try, s_recourse, vehicle_id);
+                // XXX Onderstaande lijn 30% van rekentijd, maar niet nodig?? de gewogen cost wordt hereberekend na insertion als die voorwaardes satisfied heirboven...
+				// bereken_gewogen_route_cost(p, s_try, s_recourse, vehicle_id);
 			}
 
 			if (s.routes[vehicle_id].route.size() == 2)
