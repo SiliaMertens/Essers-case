@@ -32,7 +32,7 @@ void show(vector<int> const &input)
 void show_usage(std::string name)
 {
 	std::cerr << "---------------------------------------------------------------------\n"
-			  << "Usage: " << name << " arg1 arg2 arg3 ..... arg 6 | ARGUMENTS (Required)\n"
+			  << "Usage: " << name << " arg1 arg2 arg3 ..... arg 8 | ARGUMENTS (Required)\n"
 			  << "---------------------------------------------------------------------\n"
 			  << "ARGUMENTS:\n"
 			  << "\toptimization: type of optimization e.g. deterministic\n"
@@ -42,7 +42,7 @@ void show_usage(std::string name)
 			  << "\ttime_window_violation_cost: A double number. E.g. 0.5\n"
 			  << "\tdriving_time_violation_cost: A double number. E.g. 1000\n"
 			  << "\tdistribution_file: A text file with the distribution, each line is <order_id>,<given_demand>,... where ... are doubles representing a distribution\n"
-			  << "Example: " << name << " deterministic Inputfile_experiments_tw2u.txt `04-Sep-2018` distance_matrix4sep.txt 0 0 emp_04-Sep-2018_b137.csv"
+			  << "Example: " << name << " deterministic Inputfile_experiments_tw2u0.txt 04-Sep-2018 distance_matrix4sep.txt 0.5 1000 emp_04-Sep-2018_b1370.csv"
 			  << std::endl;
 }
 // "General_Cargo_LTL_2018_v10072019_input_code adjusted tw.txt" "2-Jan-2018" "distance_matrix 2 jan.txt" 10 1000 10 "emp_04-Sep-2018_b137.csv"
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 	*/
 	struct problem p;
 
-	if (false)
+	if (argc < 8)
 	{
 		std::cerr << "The program expect 8 arguments to be passed.\nCurrently " + to_string(argc - 1) + " are passed \nSee Usage below." << std::endl;
 		show_usage(argv[0]);
@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 		{
 			std::cerr << e.what() << '\n';
 			show_usage(argv[0]);
-			throw std::invalid_argument("main() -> Value is not converted to double or does not exist in the arguments. See the usage.");
+			throw std::invalid_argument("main(), exception during argument parsing. See the usage:");
 		}
 	}
 
