@@ -42,7 +42,7 @@ void show_usage(std::string name)
 			  << "\ttime_window_violation_cost: A double number. E.g. 0.5\n"
 			  << "\tdriving_time_violation_cost: A double number. E.g. 1000\n"
 			  << "\tdistribution_file: A text file with the distribution, each line is <order_id>,<given_demand>,... where ... are doubles representing a distribution\n"
-			  << "Example: " << name << " deterministic Inputfile_experiments_tw2u0.txt 04-Sep-2018 distance_matrix4sep.txt 0.5 1000 emp_04-Sep-2018_b1370.csv"
+			  << "Example: " << name << " Stochastic Inputfile_experiments_tw2u0.txt 04-Sep-2018 distance_matrix4sep.txt 0.5 1000 emp_04-Sep-2018_b1370.csv"
 			  << std::endl;
 }
 // "General_Cargo_LTL_2018_v10072019_input_code adjusted tw.txt" "2-Jan-2018" "distance_matrix 2 jan.txt" 10 1000 10 "emp_04-Sep-2018_b137.csv"
